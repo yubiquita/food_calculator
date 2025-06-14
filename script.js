@@ -152,7 +152,8 @@ class FoodCalculator {
             <div class="food-card">
                 <div class="food-card-header">
                     <input type="text" class="food-name" value="${food.name}" 
-                           onchange="app.updateFoodName(${food.id}, this.value)">
+                           onchange="app.updateFoodName(${food.id}, this.value)"
+                           onfocus="this.select()">
                     <button class="delete-btn" onclick="app.deleteFood(${food.id})">×</button>
                 </div>
                 
