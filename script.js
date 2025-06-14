@@ -87,7 +87,7 @@ class FoodCalculator {
                 sourceId: parseInt(sourceId),
                 multiplier: parseFloat(multiplier) || 1
             };
-            food.weight = sourceFood.weight * (parseFloat(multiplier) || 1);
+            food.weight = Math.round(sourceFood.weight * (parseFloat(multiplier) || 1));
             this.saveData();
             this.render();
         }
@@ -137,6 +137,17 @@ class FoodCalculator {
     render() {
         const container = document.getElementById('food-cards');
         container.innerHTML = this.foods.map(food => this.renderFoodCard(food)).join('');
+        
+        // 重量表示のクリックイベントを追加
+        const weightDisplays = container.querySelectorAll('.weight-display');
+        weightDisplays.forEach(element => {
+            element.addEventListener('click', (e) => {
+                const value = e.target.getAttribute('data-copy-value');
+                if (value) {
+                    this.copyToClipboard(value);
+                }
+            });
+        });
     }
 
     renderFoodCard(food) {
@@ -157,7 +168,7 @@ class FoodCalculator {
                     <button class="delete-btn" onclick="app.deleteFood(${food.id})">×</button>
                 </div>
                 
-                <div class="weight-display">${food.weight.toFixed(1)}g</div>
+                <div class="weight-display" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;" title="タップでコピー">${Math.round(food.weight)}g</div>
                 
                 <div class="controls">
                     <div class="control-row">
@@ -186,7 +197,7 @@ class FoodCalculator {
                         <span>×</span>
                         <input type="number" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0">
                         <button class="control-btn" onclick="app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, document.getElementById('calc-multiplier-${food.id}').value)">計算</button>
-                        ${food.calculation ? `<span class="calculation-result">= ${food.weight.toFixed(1)}g</span>` : ''}
+                        ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${Math.round(food.weight)}g</span>` : ''}
                     </div>
                     ` : ''}
                 </div>
@@ -209,6 +220,28 @@ class FoodCalculator {
             this.foods = parsed.foods || [];
             this.dishes = parsed.dishes || [];
             this.nextId = parsed.nextId || 1;
+        }
+    }
+
+    async copyToClipboard(value) {
+        try {
+            await navigator.clipboard.writeText(value.toString());
+        } catch (err) {
+            // フォールバック
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = value.toString();
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                textArea.style.top = '0';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            } catch (fallbackErr) {
+                // エラーは無視（ユーザーにはAndroid側の通知が表示される）
+            }
         }
     }
 }
