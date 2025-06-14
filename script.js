@@ -31,7 +31,8 @@ class FoodCalculator {
             id: this.nextId++,
             name: `料理${this.foods.length + 1}`,
             weight: 0,
-            calculation: null
+            calculation: null,
+            history: []
         };
         this.foods.push(food);
         this.saveData();
@@ -63,18 +64,36 @@ class FoodCalculator {
     addWeight(id, weight) {
         const food = this.foods.find(f => f.id === id);
         if (food) {
-            food.weight += parseFloat(weight) || 0;
-            this.saveData();
-            this.render();
+            const weightValue = parseFloat(weight) || 0;
+            if (weightValue !== 0) {
+                food.weight += weightValue;
+                if (!food.history) food.history = [];
+                food.history.push({
+                    type: 'add',
+                    value: weightValue,
+                    timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                });
+                this.saveData();
+                this.render();
+            }
         }
     }
 
     subtractWeight(id, weight) {
         const food = this.foods.find(f => f.id === id);
         if (food) {
-            food.weight -= parseFloat(weight) || 0;
-            this.saveData();
-            this.render();
+            const weightValue = parseFloat(weight) || 0;
+            if (weightValue !== 0) {
+                food.weight -= weightValue;
+                if (!food.history) food.history = [];
+                food.history.push({
+                    type: 'subtract',
+                    value: weightValue,
+                    timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                });
+                this.saveData();
+                this.render();
+            }
         }
     }
 
@@ -83,11 +102,24 @@ class FoodCalculator {
         const sourceFood = this.foods.find(f => f.id === parseInt(sourceId));
         
         if (food && sourceFood) {
+            const multiplierValue = parseFloat(multiplier) || 1;
+            const calculatedWeight = Math.round(sourceFood.weight * multiplierValue);
+            
             food.calculation = {
                 sourceId: parseInt(sourceId),
-                multiplier: parseFloat(multiplier) || 1
+                multiplier: multiplierValue
             };
-            food.weight = Math.round(sourceFood.weight * (parseFloat(multiplier) || 1));
+            food.weight = calculatedWeight;
+            
+            if (!food.history) food.history = [];
+            food.history.push({
+                type: 'calculation',
+                value: calculatedWeight,
+                sourceName: sourceFood.name,
+                multiplier: multiplierValue,
+                timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+            });
+            
             this.saveData();
             this.render();
         }
@@ -170,6 +202,8 @@ class FoodCalculator {
                 
                 <div class="weight-display" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;" title="タップでコピー">${Math.round(food.weight)}g</div>
                 
+                ${this.renderHistory(food)}
+                
                 <div class="controls">
                     <div class="control-row">
                         <label>重量:</label>
@@ -204,6 +238,37 @@ class FoodCalculator {
             </div>
         `;
     }
+    
+    renderHistory(food) {
+        if (!food.history || food.history.length === 0) {
+            return '';
+        }
+        
+        const historyItems = food.history.slice(-5).map(item => {
+            let text = '';
+            switch (item.type) {
+                case 'add':
+                    text = `+${Math.round(item.value)}g`;
+                    break;
+                case 'subtract':
+                    text = `-${Math.round(item.value)}g`;
+                    break;
+                case 'calculation':
+                    text = `=${Math.round(item.value)}g (×${item.multiplier})`;
+                    break;
+            }
+            return `<div class="history-item">
+                        <span class="history-operation">${text}</span>
+                        <span class="history-time">${item.timestamp}</span>
+                    </div>`;
+        }).join('');
+        
+        return `<div class="calculation-history">
+                    <div class="history-header">履歴</div>
+                    <div class="history-items">${historyItems}</div>
+                </div>`;
+    
+    }
 
     saveData() {
         localStorage.setItem('foodCalculatorData', JSON.stringify({
@@ -217,7 +282,10 @@ class FoodCalculator {
         const data = localStorage.getItem('foodCalculatorData');
         if (data) {
             const parsed = JSON.parse(data);
-            this.foods = parsed.foods || [];
+            this.foods = (parsed.foods || []).map(food => ({
+                ...food,
+                history: food.history || []
+            }));
             this.dishes = parsed.dishes || [];
             this.nextId = parsed.nextId || 1;
         }
