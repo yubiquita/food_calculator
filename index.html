@@ -13,23 +13,23 @@
             <div class="header-buttons">
                 <button id="add-food" class="btn-primary">+新規</button>
                 <button id="clear-all" class="btn-danger">全削除</button>
-                <button id="dish-settings" class="btn-secondary">皿設定</button>
+                <button id="dish-settings" class="btn-secondary">食器設定</button>
             </div>
         </header>
 
         <main class="main" id="food-cards">
         </main>
 
-        <!-- 皿設定モーダル -->
+        <!-- 食器設定モーダル -->
         <div id="dish-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>皿設定</h2>
+                    <h2>食器設定</h2>
                     <span class="close">&times;</span>
                 </div>
                 <div class="modal-body">
                     <form id="dish-form">
-                        <input type="text" id="dish-name" placeholder="皿の名前" required>
+                        <input type="text" id="dish-name" placeholder="食器の名前" required>
                         <input type="number" id="dish-weight" placeholder="重量(g)" required>
                         <button type="submit" class="btn-primary">追加</button>
                     </form>

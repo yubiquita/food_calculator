@@ -213,7 +213,7 @@ class FoodCalculator {
                     </div>
                     
                     <div class="control-row">
-                        <label>皿重量:</label>
+                        <label>食器重量:</label>
                         <select id="dish-select-${food.id}" onchange="document.getElementById('dish-weight-${food.id}').value = this.value">
                             <option value="">選択</option>
                             ${dishOptions}
