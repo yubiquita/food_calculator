@@ -377,4 +377,14 @@ body {
     .calculation-row {
         flex-wrap: wrap;
     }
+    
+    /* 食器設定モーダルのレスポンシブ対応 */
+    #dish-form {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    #dish-form input {
+        width: 100%;
+    }
 }
