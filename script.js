@@ -208,7 +208,7 @@ class FoodCalculator {
                 <div class="controls">
                     <div class="control-row">
                         <label>重量:</label>
-                        <input type="number" id="weight-input-${food.id}" placeholder="0">
+                        <input type="number" id="weight-input-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(${food.id}, this.value); this.value=''; this.blur()}">
                         <button class="control-btn" onclick="app.addWeight(${food.id}, document.getElementById('weight-input-${food.id}').value); document.getElementById('weight-input-${food.id}').value=''">+</button>
                     </div>
                     
@@ -218,7 +218,7 @@ class FoodCalculator {
                             <option value="">選択</option>
                             ${dishOptions}
                         </select>
-                        <input type="number" id="dish-weight-${food.id}" placeholder="0">
+                        <input type="number" id="dish-weight-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(${food.id}, this.value); this.value=''; document.getElementById('dish-select-${food.id}').value=''; this.blur()}">
                         <button class="control-btn" onclick="app.subtractWeight(${food.id}, document.getElementById('dish-weight-${food.id}').value); document.getElementById('dish-weight-${food.id}').value=''; document.getElementById('dish-select-${food.id}').value=''">-</button>
                     </div>
                     
@@ -230,7 +230,7 @@ class FoodCalculator {
                             ${foodOptions}
                         </select>
                         <span>×</span>
-                        <input type="number" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0">
+                        <input type="number" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" onkeydown="if(event.key==='Enter'){app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, this.value); this.blur()}">
                         <button class="control-btn" onclick="app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, document.getElementById('calc-multiplier-${food.id}').value)">計算</button>
                         ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${Math.round(food.weight)}g</span>` : ''}
                     </div>
