@@ -53,6 +53,7 @@ class FoodCalculator {
     }
 
     showConfirmModal() {
+        if (this.foods.length === 0) return;
         document.getElementById('confirm-modal').style.display = 'block';
     }
 
@@ -183,6 +184,10 @@ class FoodCalculator {
     render() {
         const container = document.getElementById('food-cards');
         container.innerHTML = this.foods.map(food => this.renderFoodCard(food)).join('');
+        
+        // 全削除ボタンの状態を更新
+        const clearAllBtn = document.getElementById('clear-all');
+        clearAllBtn.disabled = this.foods.length === 0;
         
         // 重量表示のクリックイベントを追加
         const weightDisplays = container.querySelectorAll('.weight-display');
