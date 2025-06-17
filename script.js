@@ -15,15 +15,22 @@ class FoodCalculator {
     bindEvents() {
         // ヘッダーボタン
         document.getElementById('add-food').addEventListener('click', () => this.addNewFood());
-        document.getElementById('clear-all').addEventListener('click', () => this.clearAll());
+        document.getElementById('clear-all').addEventListener('click', () => this.showConfirmModal());
         document.getElementById('dish-settings').addEventListener('click', () => this.openDishSettings());
 
-        // モーダル
+        // 食器設定モーダル
         document.querySelector('.close').addEventListener('click', () => this.closeDishSettings());
         document.getElementById('dish-modal').addEventListener('click', (e) => {
             if (e.target.id === 'dish-modal') this.closeDishSettings();
         });
         document.getElementById('dish-form').addEventListener('submit', (e) => this.addDish(e));
+        
+        // 確認モーダル
+        document.getElementById('confirm-cancel').addEventListener('click', () => this.hideConfirmModal());
+        document.getElementById('confirm-delete').addEventListener('click', () => this.confirmClearAll());
+        document.getElementById('confirm-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'confirm-modal') this.hideConfirmModal();
+        });
     }
 
     addNewFood() {
@@ -45,12 +52,19 @@ class FoodCalculator {
         this.render();
     }
 
-    clearAll() {
-        if (confirm('すべての料理を削除しますか？')) {
-            this.foods = [];
-            this.saveData();
-            this.render();
-        }
+    showConfirmModal() {
+        document.getElementById('confirm-modal').style.display = 'block';
+    }
+
+    hideConfirmModal() {
+        document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    confirmClearAll() {
+        this.foods = [];
+        this.saveData();
+        this.render();
+        this.hideConfirmModal();
     }
 
     updateFoodName(id, name) {

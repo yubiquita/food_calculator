@@ -37,6 +37,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- 全削除確認モーダル -->
+        <div id="confirm-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>全削除の確認</h2>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 20px; color: #555; line-height: 1.5;">
+                        すべての料理データを削除します。<br>
+                        この操作は取り消せません。
+                    </p>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button id="confirm-cancel" class="btn-secondary">キャンセル</button>
+                        <button id="confirm-delete" class="btn-danger">削除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
