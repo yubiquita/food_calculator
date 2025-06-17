@@ -3,11 +3,13 @@ class FoodCalculator {
         this.foods = [];
         this.dishes = [];
         this.nextId = 1;
+        this.theme = 'light';
         this.init();
     }
 
     init() {
         this.loadData();
+        this.initTheme();
         this.bindEvents();
         this.render();
     }
@@ -17,6 +19,7 @@ class FoodCalculator {
         document.getElementById('add-food').addEventListener('click', () => this.addNewFood());
         document.getElementById('clear-all').addEventListener('click', () => this.showConfirmModal());
         document.getElementById('dish-settings').addEventListener('click', () => this.openDishSettings());
+        document.getElementById('theme-toggle').addEventListener('click', () => this.toggleTheme());
 
         // 食器設定モーダル
         document.querySelector('.close').addEventListener('click', () => this.closeDishSettings());
@@ -294,7 +297,8 @@ class FoodCalculator {
         localStorage.setItem('foodCalculatorData', JSON.stringify({
             foods: this.foods,
             dishes: this.dishes,
-            nextId: this.nextId
+            nextId: this.nextId,
+            theme: this.theme
         }));
     }
 
@@ -308,6 +312,32 @@ class FoodCalculator {
             }));
             this.dishes = parsed.dishes || [];
             this.nextId = parsed.nextId || 1;
+            this.theme = parsed.theme || 'light';
+        }
+    }
+
+    initTheme() {
+        document.documentElement.setAttribute('data-theme', this.theme);
+        this.updateThemeButton();
+    }
+
+    toggleTheme() {
+        this.theme = this.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', this.theme);
+        this.updateThemeButton();
+        this.saveData();
+    }
+
+    updateThemeButton() {
+        const themeIcon = document.querySelector('.theme-icon');
+        const themeText = document.querySelector('.theme-text');
+        
+        if (this.theme === 'dark') {
+            themeIcon.textContent = '☀️';
+            themeText.textContent = 'ライト';
+        } else {
+            themeIcon.textContent = '🌙';
+            themeText.textContent = 'ダーク';
         }
     }
 
