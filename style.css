@@ -195,18 +195,20 @@ body {
 .controls {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 5px;
+    margin-top: 20px;
 }
 
 .control-row {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 80px 100px 100px 60px;
     gap: 10px;
+    align-items: center;
 }
 
 .control-row label {
     font-weight: bold;
-    min-width: 60px;
+    justify-self: start;
 }
 
 .control-row input {
@@ -218,6 +220,7 @@ body {
     background: var(--input-bg);
     color: var(--text-color);
     transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    justify-self: start;
 }
 
 .control-row select {
@@ -225,10 +228,13 @@ body {
     padding: 8px;
     border-radius: 5px;
     font-size: 14px;
-    min-width: 120px;
+    max-width: 100px;
     background: var(--input-bg);
     color: var(--text-color);
     transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    justify-self: start;
 }
 
 .control-btn {
@@ -463,11 +469,26 @@ body {
     }
     
     .control-row {
-        flex-wrap: wrap;
+        grid-template-columns: 70px 80px 80px 50px;
+        gap: 8px;
+    }
+    
+    .control-row label {
+        font-size: 13px;
+    }
+    
+    .control-row input {
+        width: 70px;
+    }
+    
+    .control-row select {
+        max-width: 85px;
+        font-size: 13px;
     }
     
     .calculation-row {
         flex-wrap: wrap;
+        gap: 8px;
     }
     
     /* 食器設定モーダルのレスポンシブ対応 */

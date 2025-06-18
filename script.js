@@ -230,6 +230,7 @@ class FoodCalculator {
                 <div class="controls">
                     <div class="control-row">
                         <label>重量:</label>
+                        <span></span>
                         <input type="number" id="weight-input-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(${food.id}, this.value); this.value=''; this.blur()}">
                         <button class="control-btn" onclick="app.addWeight(${food.id}, document.getElementById('weight-input-${food.id}').value); document.getElementById('weight-input-${food.id}').value=''">+</button>
                     </div>
