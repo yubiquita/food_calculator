@@ -20,6 +20,7 @@
     --input-bg: #ffffff;
     --dish-item-bg: #ffffff;
     --dish-item-border: #eeeeee;
+    --warning-text: #555555;
 }
 
 [data-theme="dark"] {
@@ -37,6 +38,7 @@
     --input-bg: #404040;
     --dish-item-bg: #3a3a3a;
     --dish-item-border: #505050;
+    --warning-text: #f0f0f0;
 }
 
 body {
@@ -424,6 +426,14 @@ body {
 
 .dish-delete-btn:hover {
     background: #c0392b;
+}
+
+/* 警告メッセージ */
+.warning-message {
+    margin-bottom: 20px;
+    color: var(--warning-text);
+    line-height: 1.5;
+    transition: color 0.3s ease;
 }
 
 /* テーマ切り替えボタン */
