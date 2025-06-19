@@ -18,5 +18,7 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Development files
-CLAUDE.md
+# Node.js dependencies and build artifacts
+node_modules/
+package-lock.json
+coverage/
