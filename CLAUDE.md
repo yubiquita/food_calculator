@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
         sourceId: number, // 他の食品IDへの参照
         multiplier: number // 乗算係数（例：60%の場合0.6）
     } | null,
-    history: [            // 操作履歴（最大5件表示）
+    history: [            // 操作履歴（全件保存、スクロール表示）
         {
             type: 'add'|'subtract'|'calculation',
             value: number,
@@ -62,7 +62,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **重量表示**: `Math.round()`で整数表示、クリック可能（`cursor: pointer`）
 - **数値入力**: Enterキーで即座に実行、入力欄自動クリア
 - **クリップボード**: `navigator.clipboard.writeText()`とフォールバック実装
-- **操作履歴**: 最新5件の操作を時刻付きで表示
+- **操作履歴**: 全操作履歴をスクロール表示（120px固定高でoverflow-y: auto）
 - **モーダルUI**: 食器設定と全削除確認に統一されたモーダルデザイン
 - **テーマ切り替え**: ライト・ダークテーマの切り替え機能（localStorage永続化）
 
@@ -125,6 +125,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # 全テスト実行（54個のテストケース）
 npm test
 
+# 単一テストファイル実行
+npm test tests/foodCalculator.test.js
+npm test tests/utils.test.js
+
 # ウォッチモードでテスト実行（開発中の継続テスト）
 npm run test:watch
 
@@ -135,6 +139,12 @@ npm run test:coverage
 npm install
 ```
 
+### 履歴機能の実装詳細
+- **全件保存**: 履歴の保存件数に上限なし（ユーザーが手動で料理を削除するまで永続化）
+- **スクロール表示**: `script.js:271`で`slice(-5)`を使わず全履歴を`renderHistory()`で表示
+- **CSS実装**: `style.css:299-305`で`.history-items`に`max-height: 120px`と`overflow-y: auto`を設定
+- **テスト**: `tests/utils.test.js`で7件以上の履歴が全て表示されることを確認
+
 ### テスト構造
 - **tests/setup.js**: Jestグローバル設定、DOM・localStorage・clipboard モック
 - **tests/foodCalculator.test.js**: 基本機能、重量操作、データ永続化、UI機能テスト
@@ -144,10 +154,11 @@ npm install
 ## テスト開発ガイドライン
 
 ### テスト実装時の注意点
-- **FoodCalculatorクラステスト**: `tests/setup.js`でシンプル化されたクラス定義を使用
+- **FoodCalculatorクラステスト**: `tests/setup.js`でシンプル化されたクラス定義を使用（実際のscript.jsとは独立）
 - **モック管理**: localStorage・navigator.clipboardは個別テストでモック作成
 - **データ分離**: テスト間でのデータ汚染を防ぐため独立したインスタンス作成
 - **メソッド置換**: 外部依存関係（localStorage等）は一時的なメソッド置換でモック注入
+- **DOM環境**: jest-environment-jsdomでブラウザ環境をシミュレート
 
 ### テスト実行時の確認ポイント
 - 全54テストの完全パス確認
@@ -168,3 +179,4 @@ npm install
 - 新しいUI要素にはテーマ対応の`var(--変数名)`と`transition`を必須で設定
 - レイアウト変更時はCSS Gridの4列構造（`80px 100px 100px 60px`）を維持
 - デザインの近接原則に従い、関連要素のグループ化と適切な分離を確保
+- 履歴表示は全件保存・スクロール方式を採用（`script.js`では`slice(-5)`を使用せず、CSSで`max-height`+`overflow-y: auto`で制御）

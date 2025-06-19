@@ -40,18 +40,18 @@ describe('ユーティリティ機能とエッジケース', () => {
       calculator.addNewFood();
     });
 
-    test('履歴は最大5件まで表示される', () => {
+    test('履歴は全件表示される（スクロール方式）', () => {
       const foodId = calculator.foods[0].id;
       
-      // 6回操作を実行
-      for (let i = 1; i <= 6; i++) {
+      // 7回操作を実行
+      for (let i = 1; i <= 7; i++) {
         calculator.addWeight(foodId, i.toString());
       }
       
       const historyHtml = calculator.renderHistory(calculator.foods[0]);
       const historyItems = historyHtml.match(/class="history-item"/g);
       
-      expect(historyItems).toHaveLength(5); // 最新5件のみ
+      expect(historyItems).toHaveLength(7); // 全7件表示
     });
 
     test('履歴がない場合は空文字を返す', () => {

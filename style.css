@@ -300,6 +300,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 3px;
+    max-height: 120px;
+    overflow-y: auto;
 }
 
 .history-item {

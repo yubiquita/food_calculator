@@ -268,7 +268,7 @@ class FoodCalculator {
             return '';
         }
         
-        const historyItems = food.history.slice(-5).map(item => {
+        const historyItems = food.history.map(item => {
             let text = '';
             switch (item.type) {
                 case 'add':
