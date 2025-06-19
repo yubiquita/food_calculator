@@ -146,6 +146,22 @@ describe('ユーティリティ機能とエッジケース', () => {
         expect(Math.round(input)).toBe(expected);
       });
     });
+
+    test('履歴は最新が上に表示される（降順）', () => {
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 複数の操作を順番に実行
+      calculator.addWeight(1, 100);
+      calculator.subtractWeight(1, 20);
+      calculator.addWeight(1, 30);
+      
+      const historyHtml = calculator.renderHistory(food);
+      
+      // 履歴のHTMLから操作順序を確認
+      const historyItems = historyHtml.match(/\+\d+g|\-\d+g/g);
+      expect(historyItems).toEqual(['+30g', '-20g', '+100g']); // 最新順
+    });
   });
 
   describe('エラーハンドリング', () => {

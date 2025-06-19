@@ -235,7 +235,7 @@ global.createFoodCalculator = () => {
         return '';
       }
       
-      const historyItems = food.history.map(item => {
+      const historyItems = food.history.slice().reverse().map(item => {
         let text = '';
         switch (item.type) {
           case 'add':

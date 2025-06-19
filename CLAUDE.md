@@ -122,7 +122,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### テスト環境
 ```bash
-# 全テスト実行（54個のテストケース）
+# 全テスト実行（55個のテストケース）
 npm test
 
 # 単一テストファイル実行
@@ -141,9 +141,10 @@ npm install
 
 ### 履歴機能の実装詳細
 - **全件保存**: 履歴の保存件数に上限なし（ユーザーが手動で料理を削除するまで永続化）
-- **スクロール表示**: `script.js:271`で`slice(-5)`を使わず全履歴を`renderHistory()`で表示
+- **降順表示**: `script.js:271`と`tests/setup.js:238`で`food.history.slice().reverse()`を使用し、最新の操作が上に表示
+- **スクロール表示**: 全履歴を`renderHistory()`で表示、最新が上なのでスクロール不要
 - **CSS実装**: `style.css:299-305`で`.history-items`に`max-height: 120px`と`overflow-y: auto`を設定
-- **テスト**: `tests/utils.test.js`で7件以上の履歴が全て表示されることを確認
+- **テスト**: `tests/utils.test.js`で履歴の降順表示（最新が上）を確認
 
 ### テスト構造
 - **tests/setup.js**: Jestグローバル設定、DOM・localStorage・clipboard モック
@@ -161,7 +162,7 @@ npm install
 - **DOM環境**: jest-environment-jsdomでブラウザ環境をシミュレート
 
 ### テスト実行時の確認ポイント
-- 全54テストの完全パス確認
+- 全55テストの完全パス確認
 - モック設定の正確性（特にクリップボード・データ永続化）
 - エラーハンドリングの網羅性
 - Math.round計算ロジックの精度確認
@@ -179,4 +180,4 @@ npm install
 - 新しいUI要素にはテーマ対応の`var(--変数名)`と`transition`を必須で設定
 - レイアウト変更時はCSS Gridの4列構造（`80px 100px 100px 60px`）を維持
 - デザインの近接原則に従い、関連要素のグループ化と適切な分離を確保
-- 履歴表示は全件保存・スクロール方式を採用（`script.js`では`slice(-5)`を使用せず、CSSで`max-height`+`overflow-y: auto`で制御）
+- 履歴表示は全件保存・降順表示を採用（`script.js:271`と`tests/setup.js:238`で`.reverse()`使用、最新操作が上に表示されスクロール不要）
