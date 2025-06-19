@@ -300,7 +300,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 3px;
-    max-height: 120px;
+    max-height: 60px;
     overflow-y: auto;
 }
 

@@ -62,7 +62,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **重量表示**: `Math.round()`で整数表示、クリック可能（`cursor: pointer`）
 - **数値入力**: Enterキーで即座に実行、入力欄自動クリア
 - **クリップボード**: `navigator.clipboard.writeText()`とフォールバック実装
-- **操作履歴**: 全操作履歴をスクロール表示（120px固定高でoverflow-y: auto）
+- **操作履歴**: 全操作履歴をスクロール表示（60px固定高でoverflow-y: auto）
 - **モーダルUI**: 食器設定と全削除確認に統一されたモーダルデザイン
 - **テーマ切り替え**: ライト・ダークテーマの切り替え機能（localStorage永続化）
 
@@ -143,7 +143,7 @@ npm install
 - **全件保存**: 履歴の保存件数に上限なし（ユーザーが手動で料理を削除するまで永続化）
 - **降順表示**: `script.js:271`と`tests/setup.js:238`で`food.history.slice().reverse()`を使用し、最新の操作が上に表示
 - **スクロール表示**: 全履歴を`renderHistory()`で表示、最新が上なのでスクロール不要
-- **CSS実装**: `style.css:299-305`で`.history-items`に`max-height: 120px`と`overflow-y: auto`を設定
+- **CSS実装**: `style.css:299-305`で`.history-items`に`max-height: 60px`と`overflow-y: auto`を設定
 - **テスト**: `tests/utils.test.js`で履歴の降順表示（最新が上）を確認
 
 ### テスト構造
