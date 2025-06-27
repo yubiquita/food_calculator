@@ -268,6 +268,7 @@ class FoodCalculator {
             let currentX = 0;
             let isDragging = false;
             let startTime = 0;
+            let hasMoved = false; // touchmoveが発生したかを追跡
             
             const cardContainer = card.parentElement;
             const foodId = parseInt(cardContainer.getAttribute('data-food-id'));
@@ -275,8 +276,10 @@ class FoodCalculator {
             // タッチ開始
             card.addEventListener('touchstart', (e) => {
                 startX = e.touches[0].clientX;
+                currentX = startX; // 初期値を同じに設定
                 startTime = Date.now();
                 isDragging = true;
+                hasMoved = false; // リセット
                 card.style.transition = 'none';
             }, { passive: true });
             
@@ -284,6 +287,7 @@ class FoodCalculator {
             card.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
                 
+                hasMoved = true; // 移動が発生したことを記録
                 currentX = e.touches[0].clientX;
                 const deltaX = currentX - startX;
                 
@@ -309,8 +313,8 @@ class FoodCalculator {
                 
                 card.style.transition = 'transform 0.3s ease-out';
                 
-                // スワイプ判定（閾値以上 && 短時間での操作）
-                if (Math.abs(deltaX) >= this.swipeThreshold && timeDelta < 500) {
+                // スワイプ判定（実際に移動 && 閾値以上 && 短時間での操作）
+                if (hasMoved && Math.abs(deltaX) >= this.swipeThreshold && timeDelta < 500) {
                     // Undo実行
                     this.undoLastOperation(foodId);
                 } else {
@@ -322,6 +326,7 @@ class FoodCalculator {
                 
                 currentX = 0;
                 startX = 0;
+                hasMoved = false;
             }, { passive: true });
         });
     }

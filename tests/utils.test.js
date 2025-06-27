@@ -388,4 +388,186 @@ describe('ユーティリティ機能とエッジケース', () => {
       expect(container.innerHTML).toContain('120g');
     });
   });
+
+  describe('Gmail風スワイプUndo機能', () => {
+    let swipeCalculator;
+    
+    beforeEach(() => {
+      // DOM環境をセットアップ
+      document.body.innerHTML = `
+        <div id="food-cards"></div>
+      `;
+      
+      // 新しいCalculatorインスタンスを作成
+      swipeCalculator = new FoodCalculator();
+      
+      // 料理を追加してテスト用の状態を作成
+      swipeCalculator.addNewFood();
+      swipeCalculator.addWeight(1, 100);
+      swipeCalculator.addWeight(1, 50);
+    });
+
+    test('タップのみではundo機能が動作しない', () => {
+      const food = swipeCalculator.foods[0];
+      const initialHistoryLength = food.history.length;
+      const initialWeight = food.weight;
+      
+      // レンダリングしてスワイプイベントを初期化
+      swipeCalculator.render();
+      
+      // DOM更新を待つ
+      const container = document.getElementById('food-cards');
+      expect(container.innerHTML).toContain('swipeable');
+      
+      // スワイプイベントのシミュレーション用のヘルパー関数
+      const simulateTouch = (element, eventType, clientX, timeOffset = 0) => {
+        const event = new TouchEvent(eventType, {
+          touches: eventType === 'touchend' ? [] : [{ clientX }],
+          bubbles: true,
+          cancelable: true
+        });
+        
+        // タイムスタンプを手動で設定
+        Object.defineProperty(event, 'timeStamp', {
+          value: Date.now() + timeOffset
+        });
+        
+        element.dispatchEvent(event);
+      };
+
+      const swipeableCard = document.querySelector('.food-card.swipeable');
+      expect(swipeableCard).toBeTruthy();
+      
+      // タップのシミュレーション（touchmoveなし）
+      simulateTouch(swipeableCard, 'touchstart', 100);
+      simulateTouch(swipeableCard, 'touchend', 100, 50); // 50ms後
+      
+      // タップだけではundo機能が動作しないことを確認
+      expect(food.history.length).toBe(initialHistoryLength);
+      expect(food.weight).toBe(initialWeight);
+    });
+
+    test('短距離スワイプではundo機能が動作しない', () => {
+      const food = swipeCalculator.foods[0];
+      const initialHistoryLength = food.history.length;
+      const initialWeight = food.weight;
+      
+      swipeCalculator.render();
+      
+      const simulateTouch = (element, eventType, clientX, timeOffset = 0) => {
+        const event = new TouchEvent(eventType, {
+          touches: eventType === 'touchend' ? [] : [{ clientX }],
+          bubbles: true,
+          cancelable: true
+        });
+        
+        Object.defineProperty(event, 'timeStamp', {
+          value: Date.now() + timeOffset
+        });
+        
+        element.dispatchEvent(event);
+      };
+
+      const swipeableCard = document.querySelector('.food-card.swipeable');
+      
+      // 短距離スワイプのシミュレーション（閾値未満）
+      simulateTouch(swipeableCard, 'touchstart', 100);
+      simulateTouch(swipeableCard, 'touchmove', 70, 25); // 30px移動
+      simulateTouch(swipeableCard, 'touchend', 70, 50);
+      
+      // 短距離スワイプではundo機能が動作しないことを確認
+      expect(food.history.length).toBe(initialHistoryLength);
+      expect(food.weight).toBe(initialWeight);
+    });
+
+    test('長距離スワイプでundo機能が正常に動作する', () => {
+      const food = swipeCalculator.foods[0];
+      const initialHistoryLength = food.history.length;
+      const initialWeight = food.weight;
+      
+      swipeCalculator.render();
+      
+      const simulateTouch = (element, eventType, clientX, timeOffset = 0) => {
+        const event = new TouchEvent(eventType, {
+          touches: eventType === 'touchend' ? [] : [{ clientX }],
+          bubbles: true,
+          cancelable: true
+        });
+        
+        Object.defineProperty(event, 'timeStamp', {
+          value: Date.now() + timeOffset
+        });
+        
+        element.dispatchEvent(event);
+      };
+
+      const swipeableCard = document.querySelector('.food-card.swipeable');
+      
+      // 長距離スワイプのシミュレーション（閾値以上）
+      simulateTouch(swipeableCard, 'touchstart', 100);
+      simulateTouch(swipeableCard, 'touchmove', 10, 25); // 90px移動
+      simulateTouch(swipeableCard, 'touchend', 10, 50);
+      
+      // 長距離スワイプでundo機能が動作することを確認
+      expect(food.history.length).toBe(initialHistoryLength - 1);
+      expect(food.weight).toBe(100); // 最後の操作（+50）が取り消されて100に
+    });
+
+    test('履歴のない料理ではスワイプイベントが設定されない', () => {
+      // 履歴のない新しい料理を追加
+      swipeCalculator.addNewFood();
+      swipeCalculator.render();
+      
+      const foodCards = document.querySelectorAll('.food-card');
+      const historyLessCard = Array.from(foodCards).find(card => 
+        !card.classList.contains('swipeable')
+      );
+      
+      expect(historyLessCard).toBeTruthy();
+      expect(historyLessCard.classList.contains('swipeable')).toBeFalsy();
+    });
+
+    test('長時間の操作ではundo機能が動作しない', (done) => {
+      const food = swipeCalculator.foods[0];
+      const initialHistoryLength = food.history.length;
+      const initialWeight = food.weight;
+      
+      swipeCalculator.render();
+
+      const swipeableCard = document.querySelector('.food-card.swipeable');
+      
+      // 長時間のスワイプ（500ms超過）をシミュレート
+      const touchStart = new TouchEvent('touchstart', {
+        touches: [{ clientX: 100 }],
+        bubbles: true,
+        cancelable: true
+      });
+      swipeableCard.dispatchEvent(touchStart);
+      
+      // 300ms後にtouchmove
+      setTimeout(() => {
+        const touchMove = new TouchEvent('touchmove', {
+          touches: [{ clientX: 10 }],
+          bubbles: true,
+          cancelable: true
+        });
+        swipeableCard.dispatchEvent(touchMove);
+        
+        // さらに300ms後（計600ms後）にtouchend
+        setTimeout(() => {
+          const touchEnd = new TouchEvent('touchend', {
+            touches: [],
+            bubbles: true,
+            cancelable: true
+          });
+          swipeableCard.dispatchEvent(touchEnd);
+          
+          // 長時間の操作ではundo機能が動作しないことを確認
+          expect(food.history.length).toBe(initialHistoryLength);
+          expect(food.weight).toBe(initialWeight);
+          done();
+        }, 300);
+      }, 300);
+    });
+  });
 });

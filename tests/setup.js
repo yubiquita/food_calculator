@@ -250,7 +250,93 @@ global.createFoodCalculator = () => {
     }
 
     render() {
-      // Mock render method
+      const container = document.getElementById('food-cards');
+      if (container) {
+        container.innerHTML = this.foods.map(food => this.renderFoodCard(food)).join('');
+      }
+      
+      // 全削除ボタンの状態を更新
+      const clearAllBtn = document.getElementById('clear-all');
+      if (clearAllBtn) {
+        clearAllBtn.disabled = this.foods.length === 0;
+      }
+      
+      // スワイプイベントを初期化
+      this.initSwipeEvents();
+    }
+
+    initSwipeEvents() {
+      const swipeableCards = document.querySelectorAll('.food-card.swipeable');
+      
+      swipeableCards.forEach(card => {
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+        let startTime = 0;
+        let hasMoved = false; // touchmoveが発生したかを追跡
+        
+        const cardContainer = card.parentElement;
+        const foodId = parseInt(cardContainer.getAttribute('data-food-id'));
+        
+        // タッチ開始
+        card.addEventListener('touchstart', (e) => {
+          startX = e.touches[0].clientX;
+          currentX = startX; // 初期値を同じに設定
+          startTime = Date.now();
+          isDragging = true;
+          hasMoved = false; // リセット
+          card.style.transition = 'none';
+        }, { passive: true });
+        
+        // タッチ移動
+        card.addEventListener('touchmove', (e) => {
+          if (!isDragging) return;
+          
+          hasMoved = true; // 移動が発生したことを記録
+          currentX = e.touches[0].clientX;
+          const deltaX = currentX - startX;
+          
+          // 左スワイプのみ許可
+          if (deltaX < 0) {
+            const translateX = Math.max(deltaX, -120);
+            card.style.transform = `translateX(${translateX}px)`;
+            
+            const opacity = Math.min(Math.abs(translateX) / this.swipeThreshold, 1);
+            const undoBackground = cardContainer.querySelector('.undo-background');
+            if (undoBackground) {
+              undoBackground.style.opacity = opacity;
+            }
+          }
+        }, { passive: true });
+        
+        // タッチ終了
+        card.addEventListener('touchend', (e) => {
+          if (!isDragging) return;
+          
+          isDragging = false;
+          const deltaX = currentX - startX;
+          const timeDelta = Date.now() - startTime;
+          
+          card.style.transition = 'transform 0.3s ease-out';
+          
+          // スワイプ判定（実際に移動 && 閾値以上 && 短時間での操作）
+          if (hasMoved && Math.abs(deltaX) >= this.swipeThreshold && timeDelta < 500) {
+            // Undo実行
+            this.undoLastOperation(foodId);
+          } else {
+            // 元の位置に戻す
+            card.style.transform = 'translateX(0)';
+            const undoBackground = cardContainer.querySelector('.undo-background');
+            if (undoBackground) {
+              undoBackground.style.opacity = '0';
+            }
+          }
+          
+          currentX = 0;
+          startX = 0;
+          hasMoved = false;
+        }, { passive: true });
+      });
     }
 
     renderDishList() {
@@ -269,11 +355,33 @@ global.createFoodCalculator = () => {
     }
 
     renderFoodCard(food) {
+      const hasHistory = food.history && food.history.length > 0;
+
       return `
-        <div class="food-card">
-          <h3>${food.name}</h3>
-          <div class="weight-display" data-copy-value="${Math.round(food.weight)}">${Math.round(food.weight)}g</div>
-          ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}">= ${Math.round(food.weight)}g</span>` : ''}
+        <div class="card-container" data-food-id="${food.id}">
+          <div class="undo-background">
+            <div class="undo-icon">⟲</div>
+            <div class="undo-text">取り消し</div>
+          </div>
+          <div class="food-card ${hasHistory ? 'swipeable' : ''}">
+            <div class="food-card-header">
+              <input type="text" class="food-name" value="${food.name}">
+              <button class="delete-btn">×</button>
+            </div>
+            
+            <div class="weight-display" data-copy-value="${Math.round(food.weight)}">${Math.round(food.weight)}g</div>
+            
+            ${this.renderHistory(food)}
+            
+            <div class="controls">
+              <div class="control-row">
+                <label>重量:</label>
+                <input type="number" placeholder="0">
+                <button class="control-btn">+</button>
+              </div>
+              ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}">= ${Math.round(food.weight)}g</span>` : ''}
+            </div>
+          </div>
         </div>
       `;
     }

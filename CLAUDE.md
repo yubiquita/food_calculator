@@ -120,6 +120,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **スワイプ検出**: タッチイベント（`touchstart`, `touchmove`, `touchend`）で左スワイプを検出
 - **視覚フィードバック**: スワイプ中にカードが左移動し、背景の赤いundoアイコンが表示
 - **閾値判定**: 80px以上のスワイプ＋500ms以内の操作でundo実行
+- **タップ誤動作防止**: `hasMoved`フラグで実際のスワイプとタップを区別（`script.js:271`、`tests/setup.js:276`）
 - **状態管理**: 操作前の状態を`stateHistory`に保存し、undo時に復元
 - **履歴連動**: `history`がある場合のみスワイプ可能（`.swipeable`クラス）
 
@@ -137,8 +138,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### テスト環境
 ```bash
-# 全テスト実行（63個のテストケース）
+# 全テスト実行（68個のテストケース）
 npm test
+
+# 特定のテストグループ実行
+npm test -- --testNamePattern="Gmail風スワイプUndo機能"
+npm test -- --testNamePattern="基本機能"
 
 # 単一テストファイル実行
 npm test tests/foodCalculator.test.js
@@ -177,11 +182,12 @@ npm install
 - **DOM環境**: jest-environment-jsdomでブラウザ環境をシミュレート
 
 ### テスト実行時の確認ポイント
-- 全63テストの完全パス確認（Gmail風スワイプUndo機能含む）
+- 全68テストの完全パス確認（Gmail風スワイプUndo機能5テスト含む）
 - モック設定の正確性（特にクリップボード・データ永続化）
 - エラーハンドリングの網羅性
 - Math.round計算ロジックの精度確認
-- スワイプundo機能のstate管理とイベント処理
+- スワイプundo機能のタップ誤動作防止とstate管理
+- テスト間でのデータ分離（独立したインスタンス作成）
 
 ## 実装ガイドライン
 
@@ -199,6 +205,7 @@ npm install
 - 履歴表示は全件保存・降順表示を採用（`script.js:271`と`tests/setup.js:238`で`.reverse()`使用、最新操作が上に表示されスクロール不要）
 - スワイプundo機能では操作前の状態を`stateHistory`に保存し、undo時に`history`と`stateHistory`の両方から削除
 - 新規食品追加時は`stateHistory: []`の初期化を必須実装
+- スワイプ機能実装時は`hasMoved`フラグでタップとスワイプを区別し、誤動作を防止
 
 ## TODO
 
