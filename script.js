@@ -248,6 +248,11 @@ class FoodCalculator {
                 <button class="dish-delete-btn" data-index="${index}">削除</button>
             </div>
         `).join('');
+
+        // イベントリスナーを再付与
+        container.removeEventListener('click', this._handleDishListClick);
+        this._handleDishListClick = this._handleDishListClick.bind(this);
+        container.addEventListener('click', this._handleDishListClick);
     }
 
     render() {

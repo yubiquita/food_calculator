@@ -381,7 +381,11 @@ describe('ユーティリティ機能とエッジケース', () => {
       ];
       
       // DOM要素をモック
-      const container = { innerHTML: '' };
+      const container = { 
+        innerHTML: '',
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+      };
       document.getElementById = jest.fn().mockReturnValue(container);
       
       calculator.renderDishList();

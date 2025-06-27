@@ -90,6 +90,29 @@ global.createFoodCalculator = () => {
         modal.style.display = 'none';
       }
     }
+
+    // テスト環境用のrenderDishList
+    renderDishList() {
+      const container = document.getElementById('dish-list');
+      if (container) {
+        container.innerHTML = this.dishes.map((dish, index) => `
+          <div class="dish-item">
+              <div class="dish-item-info">
+                  <div class="dish-item-name">${dish.name}</div>
+                  <div class="dish-item-weight">${dish.weight}g</div>
+              </div>
+              <button class="dish-delete-btn" data-index="${index}">削除</button>
+          </div>
+        `).join('');
+
+        // イベントリスナーを再付与
+        if (this._handleDishListClick) {
+          container.removeEventListener('click', this._handleDishListClick);
+        }
+        this._handleDishListClick = this._handleDishListClick.bind(this);
+        container.addEventListener('click', this._handleDishListClick);
+      }
+    }
   }
   
   return new TestFoodCalculator();
@@ -122,6 +145,22 @@ document.documentElement.innerHTML = htmlContent.match(/<html[^>]*>([\s\S]*)<\/h
 
 // DOM初期化完了の確認
 console.log('DOM initialized with', Array.from(document.querySelectorAll('[id]')).length, 'elements');
+
+// Mock document.getElementById for specific elements used in tests
+const originalGetElementById = document.getElementById;
+document.getElementById = jest.fn((id) => {
+  if (id === 'dish-list') {
+    // Return a mock object for 'dish-list' container
+    return {
+      innerHTML: '', // Mock innerHTML
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+    };
+  }
+  // Fallback to original for other elements
+  return originalGetElementById.call(document, id);
+});
+
 // TouchEvent\u306e\u30e2\u30c3\u30af\u3092Jest\u74b0\u5883\u7528\u306b\u8a2d\u5b9a
 global.TouchEvent = global.TouchEvent || class TouchEvent extends Event {
     constructor(type, eventInitDict) {
