@@ -11,10 +11,8 @@ exports[`renderFoodCard スナップショットテスト renderFoodCard の出�
                     
             <div class="food-card-header">
                 <input type="text" class="food-name" value="テスト料理" 
-                       onchange="app.updateFoodName(1, this.value)"
-                       onfocus="this.select()"
-                       onkeydown="if(event.key==='Enter'){this.blur()}">
-                <button class="delete-btn" onclick="app.deleteFood(1)">×</button>
+                       data-food-id="1">
+                <button class="delete-btn" data-food-id="1">×</button>
             </div>
         
                     
@@ -35,18 +33,18 @@ exports[`renderFoodCard スナップショットテスト renderFoodCard の出�
                 <div class="control-row">
                     <label>重量:</label>
                     <span></span>
-                    <input type="number" id="weight-input-1" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(1, this.value); this.value=''; this.blur()}">
-                    <button class="control-btn" onclick="app.addWeight(1, document.getElementById('weight-input-1').value); document.getElementById('weight-input-1').value=''">+</button>
+                    <input type="number" class="weight-input" id="weight-input-1" placeholder="0" data-food-id="1">
+                    <button class="control-btn add-weight-btn" data-food-id="1">+</button>
                 </div>
                 
                 <div class="control-row">
                     <label>食器重量:</label>
-                    <select id="dish-select-1" onchange="document.getElementById('dish-weight-1').value = this.value">
+                    <select class="dish-select" id="dish-select-1" data-food-id="1">
                         <option value="">選択</option>
                         
                     </select>
-                    <input type="number" id="dish-weight-1" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(1, this.value); this.value=''; document.getElementById('dish-select-1').value=''; this.blur()}">
-                    <button class="control-btn" onclick="app.subtractWeight(1, document.getElementById('dish-weight-1').value); document.getElementById('dish-weight-1').value=''; document.getElementById('dish-select-1').value=''">-</button>
+                    <input type="number" class="dish-weight-input" id="dish-weight-1" placeholder="0" data-food-id="1">
+                    <button class="control-btn subtract-weight-btn" data-food-id="1">-</button>
                 </div>
                 
                 
@@ -69,10 +67,8 @@ exports[`renderFoodCard スナップショットテスト 履歴がない場合�
                     
             <div class="food-card-header">
                 <input type="text" class="food-name" value="履歴なし料理" 
-                       onchange="app.updateFoodName(3, this.value)"
-                       onfocus="this.select()"
-                       onkeydown="if(event.key==='Enter'){this.blur()}">
-                <button class="delete-btn" onclick="app.deleteFood(3)">×</button>
+                       data-food-id="3">
+                <button class="delete-btn" data-food-id="3">×</button>
             </div>
         
                     
@@ -84,18 +80,18 @@ exports[`renderFoodCard スナップショットテスト 履歴がない場合�
                 <div class="control-row">
                     <label>重量:</label>
                     <span></span>
-                    <input type="number" id="weight-input-3" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(3, this.value); this.value=''; this.blur()}">
-                    <button class="control-btn" onclick="app.addWeight(3, document.getElementById('weight-input-3').value); document.getElementById('weight-input-3').value=''">+</button>
+                    <input type="number" class="weight-input" id="weight-input-3" placeholder="0" data-food-id="3">
+                    <button class="control-btn add-weight-btn" data-food-id="3">+</button>
                 </div>
                 
                 <div class="control-row">
                     <label>食器重量:</label>
-                    <select id="dish-select-3" onchange="document.getElementById('dish-weight-3').value = this.value">
+                    <select class="dish-select" id="dish-select-3" data-food-id="3">
                         <option value="">選択</option>
                         
                     </select>
-                    <input type="number" id="dish-weight-3" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(3, this.value); this.value=''; document.getElementById('dish-select-3').value=''; this.blur()}">
-                    <button class="control-btn" onclick="app.subtractWeight(3, document.getElementById('dish-weight-3').value); document.getElementById('dish-weight-3').value=''; document.getElementById('dish-select-3').value=''">-</button>
+                    <input type="number" class="dish-weight-input" id="dish-weight-3" placeholder="0" data-food-id="3">
+                    <button class="control-btn subtract-weight-btn" data-food-id="3">-</button>
                 </div>
                 
                 
@@ -118,10 +114,8 @@ exports[`renderFoodCard スナップショットテスト 計算設定がない�
                     
             <div class="food-card-header">
                 <input type="text" class="food-name" value="計算なし料理" 
-                       onchange="app.updateFoodName(2, this.value)"
-                       onfocus="this.select()"
-                       onkeydown="if(event.key==='Enter'){this.blur()}">
-                <button class="delete-btn" onclick="app.deleteFood(2)">×</button>
+                       data-food-id="2">
+                <button class="delete-btn" data-food-id="2">×</button>
             </div>
         
                     
@@ -133,18 +127,18 @@ exports[`renderFoodCard スナップショットテスト 計算設定がない�
                 <div class="control-row">
                     <label>重量:</label>
                     <span></span>
-                    <input type="number" id="weight-input-2" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(2, this.value); this.value=''; this.blur()}">
-                    <button class="control-btn" onclick="app.addWeight(2, document.getElementById('weight-input-2').value); document.getElementById('weight-input-2').value=''">+</button>
+                    <input type="number" class="weight-input" id="weight-input-2" placeholder="0" data-food-id="2">
+                    <button class="control-btn add-weight-btn" data-food-id="2">+</button>
                 </div>
                 
                 <div class="control-row">
                     <label>食器重量:</label>
-                    <select id="dish-select-2" onchange="document.getElementById('dish-weight-2').value = this.value">
+                    <select class="dish-select" id="dish-select-2" data-food-id="2">
                         <option value="">選択</option>
                         
                     </select>
-                    <input type="number" id="dish-weight-2" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(2, this.value); this.value=''; document.getElementById('dish-select-2').value=''; this.blur()}">
-                    <button class="control-btn" onclick="app.subtractWeight(2, document.getElementById('dish-weight-2').value); document.getElementById('dish-weight-2').value=''; document.getElementById('dish-select-2').value=''">-</button>
+                    <input type="number" class="dish-weight-input" id="dish-weight-2" placeholder="0" data-food-id="2">
+                    <button class="control-btn subtract-weight-btn" data-food-id="2">-</button>
                 </div>
                 
                 

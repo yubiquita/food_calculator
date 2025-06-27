@@ -245,19 +245,86 @@ class FoodCalculator {
         const clearAllBtn = document.getElementById('clear-all');
         clearAllBtn.disabled = this.foods.length === 0;
         
-        // 重量表示のクリックイベントを追加
-        const weightDisplays = container.querySelectorAll('.weight-display');
-        weightDisplays.forEach(element => {
-            element.addEventListener('click', (e) => {
-                const value = e.target.getAttribute('data-copy-value');
-                if (value) {
-                    this.copyToClipboard(value);
-                }
-            });
-        });
+        // イベントデリゲーション
+        container.removeEventListener('click', this._handleCardClick);
+        container.removeEventListener('change', this._handleCardChange);
+        container.removeEventListener('keydown', this._handleCardKeydown);
+
+        this._handleCardClick = this._handleCardClick.bind(this);
+        this._handleCardChange = this._handleCardChange.bind(this);
+        this._handleCardKeydown = this._handleCardKeydown.bind(this);
+
+        container.addEventListener('click', this._handleCardClick);
+        container.addEventListener('change', this._handleCardChange);
+        container.addEventListener('keydown', this._handleCardKeydown);
 
         // スワイプイベントを追加
         this.initSwipeEvents();
+    }
+
+    _handleCardClick(e) {
+        const target = e.target;
+        const foodId = parseInt(target.dataset.foodId || target.closest('.card-container')?.dataset.foodId);
+
+        if (target.classList.contains('delete-btn')) {
+            this.deleteFood(foodId);
+        } else if (target.classList.contains('add-weight-btn')) {
+            const input = document.getElementById(`weight-input-${foodId}`);
+            this.addWeight(foodId, input.value);
+            input.value = '';
+        } else if (target.classList.contains('subtract-weight-btn')) {
+            const input = document.getElementById(`dish-weight-${foodId}`);
+            const select = document.getElementById(`dish-select-${foodId}`);
+            this.subtractWeight(foodId, input.value);
+            input.value = '';
+            select.value = '';
+        } else if (target.classList.contains('calculate-btn')) {
+            const sourceSelect = document.getElementById(`calc-source-${foodId}`);
+            const multiplierInput = document.getElementById(`calc-multiplier-${foodId}`);
+            this.updateCalculation(foodId, sourceSelect.value, multiplierInput.value);
+        } else if (target.classList.contains('weight-display') || target.classList.contains('calculation-result')) {
+            const value = target.dataset.copyValue;
+            if (value) {
+                this.copyToClipboard(value);
+            }
+        }
+    }
+
+    _handleCardChange(e) {
+        const target = e.target;
+        const foodId = parseInt(target.dataset.foodId || target.closest('.card-container')?.dataset.foodId);
+
+        if (target.classList.contains('food-name')) {
+            this.updateFoodName(foodId, target.value);
+        } else if (target.classList.contains('dish-select')) {
+            const dishWeightInput = document.getElementById(`dish-weight-${foodId}`);
+            dishWeightInput.value = target.value;
+        }
+    }
+
+    _handleCardKeydown(e) {
+        const target = e.target;
+        const foodId = parseInt(target.dataset.foodId || target.closest('.card-container')?.dataset.foodId);
+
+        if (e.key === 'Enter') {
+            if (target.classList.contains('food-name')) {
+                target.blur();
+            } else if (target.classList.contains('weight-input')) {
+                this.addWeight(foodId, target.value);
+                target.value = '';
+                target.blur();
+            } else if (target.classList.contains('dish-weight-input')) {
+                const select = document.getElementById(`dish-select-${foodId}`);
+                this.subtractWeight(foodId, target.value);
+                target.value = '';
+                select.value = '';
+                target.blur();
+            } else if (target.classList.contains('calc-multiplier')) {
+                const sourceSelect = document.getElementById(`calc-source-${foodId}`);
+                this.updateCalculation(foodId, sourceSelect.value, target.value);
+                target.blur();
+            }
+        }
     }
 
     initSwipeEvents() {
@@ -361,10 +428,8 @@ class FoodCalculator {
         return `
             <div class="food-card-header">
                 <input type="text" class="food-name" value="${food.name}" 
-                       onchange="app.updateFoodName(${food.id}, this.value)"
-                       onfocus="this.select()"
-                       onkeydown="if(event.key==='Enter'){this.blur()}">
-                <button class="delete-btn" onclick="app.deleteFood(${food.id})">×</button>
+                       data-food-id="${food.id}">
+                <button class="delete-btn" data-food-id="${food.id}">×</button>
             </div>
         `;
     }
@@ -381,18 +446,18 @@ class FoodCalculator {
                 <div class="control-row">
                     <label>重量:</label>
                     <span></span>
-                    <input type="number" id="weight-input-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(${food.id}, this.value); this.value=''; this.blur()}">
-                    <button class="control-btn" onclick="app.addWeight(${food.id}, document.getElementById('weight-input-${food.id}').value); document.getElementById('weight-input-${food.id}').value=''">+</button>
+                    <input type="number" class="weight-input" id="weight-input-${food.id}" placeholder="0" data-food-id="${food.id}">
+                    <button class="control-btn add-weight-btn" data-food-id="${food.id}">+</button>
                 </div>
                 
                 <div class="control-row">
                     <label>食器重量:</label>
-                    <select id="dish-select-${food.id}" onchange="document.getElementById('dish-weight-${food.id}').value = this.value">
+                    <select class="dish-select" id="dish-select-${food.id}" data-food-id="${food.id}">
                         <option value="">選択</option>
                         ${dishOptions}
                     </select>
-                    <input type="number" id="dish-weight-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(${food.id}, this.value); this.value=''; document.getElementById('dish-select-${food.id}').value=''; this.blur()}">
-                    <button class="control-btn" onclick="app.subtractWeight(${food.id}, document.getElementById('dish-weight-${food.id}').value); document.getElementById('dish-weight-${food.id}').value=''; document.getElementById('dish-select-${food.id}').value=''">-</button>
+                    <input type="number" class="dish-weight-input" id="dish-weight-${food.id}" placeholder="0" data-food-id="${food.id}">
+                    <button class="control-btn subtract-weight-btn" data-food-id="${food.id}">-</button>
                 </div>
                 
                 ${this.renderCalculation(food, foodOptions)}
@@ -407,13 +472,13 @@ class FoodCalculator {
         return `
             <div class="calculation-row">
                 <label>計算:</label>
-                <select id="calc-source-${food.id}">
+                <select class="calc-source" id="calc-source-${food.id}" data-food-id="${food.id}">
                     <option value="">選択</option>
                     ${foodOptions}
                 </select>
                 <span>×</span>
-                <input type="number" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" onkeydown="if(event.key==='Enter'){app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, this.value); this.blur()}">
-                <button class="control-btn" onclick="app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, document.getElementById('calc-multiplier-${food.id}').value)">計算</button>
+                <input type="number" class="calc-multiplier" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" data-food-id="${food.id}">
+                <button class="control-btn calculate-btn" data-food-id="${food.id}">計算</button>
                 ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${Math.round(food.weight)}g</span>` : ''}
             </div>
         `;
