@@ -77,18 +77,30 @@ describe('FoodCalculator', () => {
   describe('確認モーダル', () => {
     test('料理がある場合は確認モーダルを表示する', () => {
       calculator.addNewFood();
+      
+      // Debug logging
+      // DOM要素の存在確認
+      expect(document.getElementById('confirm-modal')).toBeTruthy();
+      expect(document.getElementById('clear-all')).toBeTruthy();
+      expect(document.getElementById('food-cards')).toBeTruthy();
+      
       const modal = document.getElementById('confirm-modal');
       
       calculator.showConfirmModal();
       
+      expect(modal).toBeTruthy();
       expect(modal.style.display).toBe('block');
     });
 
     test('料理がない場合は確認モーダルを表示しない', () => {
       const modal = document.getElementById('confirm-modal');
       
+      // テスト環境でCSS適用前の初期設定
+      modal.style.display = 'none';
+      
       calculator.showConfirmModal();
       
+      // showConfirmModal()を呼んでも、料理がない場合はモーダルは表示されない
       expect(modal.style.display).toBe('none');
     });
 

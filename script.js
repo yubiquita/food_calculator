@@ -501,5 +501,10 @@ class FoodCalculator {
     }
 }
 
-// アプリケーション初期化
-const app = new FoodCalculator();
+// CommonJS対応（テスト環境用）
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = FoodCalculator;
+} else {
+    // ブラウザ環境でのみアプリケーション初期化
+    const app = new FoodCalculator();
+}
