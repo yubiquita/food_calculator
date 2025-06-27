@@ -218,6 +218,19 @@ class FoodCalculator {
     openDishSettings() {
         document.getElementById('dish-modal').style.display = 'block';
         this.renderDishList();
+
+        const dishListContainer = document.getElementById('dish-list');
+        dishListContainer.removeEventListener('click', this._handleDishListClick);
+        this._handleDishListClick = this._handleDishListClick.bind(this);
+        dishListContainer.addEventListener('click', this._handleDishListClick);
+    }
+
+    _handleDishListClick(e) {
+        const target = e.target;
+        if (target.classList.contains('dish-delete-btn')) {
+            const index = parseInt(target.dataset.index);
+            this.deleteDish(index);
+        }
     }
 
     closeDishSettings() {
@@ -232,7 +245,7 @@ class FoodCalculator {
                     <div class="dish-item-name">${dish.name}</div>
                     <div class="dish-item-weight">${dish.weight}g</div>
                 </div>
-                <button class="dish-delete-btn" onclick="app.deleteDish(${index})">削除</button>
+                <button class="dish-delete-btn" data-index="${index}">削除</button>
             </div>
         `).join('');
     }
