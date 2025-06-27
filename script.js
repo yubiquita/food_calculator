@@ -332,15 +332,13 @@ class FoodCalculator {
     }
 
     renderFoodCard(food) {
+        const hasHistory = food.history && food.history.length > 0;
         const dishOptions = this.dishes.map(dish => 
             `<option value="${dish.weight}">${dish.name} ${dish.weight}g</option>`
         ).join('');
-
         const foodOptions = this.foods.filter(f => f.id !== food.id).map(f => 
             `<option value="${f.id}">${f.name}</option>`
         ).join('');
-
-        const hasHistory = food.history && food.history.length > 0;
 
         return `
             <div class="card-container" data-food-id="${food.id}">
@@ -349,55 +347,83 @@ class FoodCalculator {
                     <div class="undo-text">取り消し</div>
                 </div>
                 <div class="food-card ${hasHistory ? 'swipeable' : ''}">
-                    <div class="food-card-header">
-                        <input type="text" class="food-name" value="${food.name}" 
-                               onchange="app.updateFoodName(${food.id}, this.value)"
-                               onfocus="this.select()"
-                               onkeydown="if(event.key==='Enter'){this.blur()}">
-                        <button class="delete-btn" onclick="app.deleteFood(${food.id})">×</button>
-                    </div>
-                    
-                    <div class="weight-display" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;" title="タップでコピー">${Math.round(food.weight)}g</div>
-                    
+                    ${this.renderCardHeader(food)}
+                    ${this.renderWeightDisplay(food)}
                     ${this.renderHistory(food)}
-                    
-                    <div class="controls">
-                        <div class="control-row">
-                            <label>重量:</label>
-                            <span></span>
-                            <input type="number" id="weight-input-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(${food.id}, this.value); this.value=''; this.blur()}">
-                            <button class="control-btn" onclick="app.addWeight(${food.id}, document.getElementById('weight-input-${food.id}').value); document.getElementById('weight-input-${food.id}').value=''">+</button>
-                        </div>
-                        
-                        <div class="control-row">
-                            <label>食器重量:</label>
-                            <select id="dish-select-${food.id}" onchange="document.getElementById('dish-weight-${food.id}').value = this.value">
-                                <option value="">選択</option>
-                                ${dishOptions}
-                            </select>
-                            <input type="number" id="dish-weight-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(${food.id}, this.value); this.value=''; document.getElementById('dish-select-${food.id}').value=''; this.blur()}">
-                            <button class="control-btn" onclick="app.subtractWeight(${food.id}, document.getElementById('dish-weight-${food.id}').value); document.getElementById('dish-weight-${food.id}').value=''; document.getElementById('dish-select-${food.id}').value=''">-</button>
-                        </div>
-                        
-                        ${foodOptions ? `
-                        <div class="calculation-row">
-                            <label>計算:</label>
-                            <select id="calc-source-${food.id}">
-                                <option value="">選択</option>
-                                ${foodOptions}
-                            </select>
-                            <span>×</span>
-                            <input type="number" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" onkeydown="if(event.key==='Enter'){app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, this.value); this.blur()}">
-                            <button class="control-btn" onclick="app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, document.getElementById('calc-multiplier-${food.id}').value)">計算</button>
-                            ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${Math.round(food.weight)}g</span>` : ''}
-                        </div>
-                        ` : ''}
-                    </div>
+                    ${this.renderControls(food, dishOptions, foodOptions)}
+                    ${this.renderCardFooter(food)}
                 </div>
             </div>
         `;
     }
-    
+
+    renderCardHeader(food) {
+        return `
+            <div class="food-card-header">
+                <input type="text" class="food-name" value="${food.name}" 
+                       onchange="app.updateFoodName(${food.id}, this.value)"
+                       onfocus="this.select()"
+                       onkeydown="if(event.key==='Enter'){this.blur()}">
+                <button class="delete-btn" onclick="app.deleteFood(${food.id})">×</button>
+            </div>
+        `;
+    }
+
+    renderWeightDisplay(food) {
+        return `
+            <div class="weight-display" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;" title="タップでコピー">${Math.round(food.weight)}g</div>
+        `;
+    }
+
+    renderControls(food, dishOptions, foodOptions) {
+        return `
+            <div class="controls">
+                <div class="control-row">
+                    <label>重量:</label>
+                    <span></span>
+                    <input type="number" id="weight-input-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(${food.id}, this.value); this.value=''; this.blur()}">
+                    <button class="control-btn" onclick="app.addWeight(${food.id}, document.getElementById('weight-input-${food.id}').value); document.getElementById('weight-input-${food.id}').value=''">+</button>
+                </div>
+                
+                <div class="control-row">
+                    <label>食器重量:</label>
+                    <select id="dish-select-${food.id}" onchange="document.getElementById('dish-weight-${food.id}').value = this.value">
+                        <option value="">選択</option>
+                        ${dishOptions}
+                    </select>
+                    <input type="number" id="dish-weight-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(${food.id}, this.value); this.value=''; document.getElementById('dish-select-${food.id}').value=''; this.blur()}">
+                    <button class="control-btn" onclick="app.subtractWeight(${food.id}, document.getElementById('dish-weight-${food.id}').value); document.getElementById('dish-weight-${food.id}').value=''; document.getElementById('dish-select-${food.id}').value=''">-</button>
+                </div>
+                
+                ${this.renderCalculation(food, foodOptions)}
+            </div>
+        `;
+    }
+
+    renderCalculation(food, foodOptions) {
+        if (!foodOptions) {
+            return '';
+        }
+        return `
+            <div class="calculation-row">
+                <label>計算:</label>
+                <select id="calc-source-${food.id}">
+                    <option value="">選択</option>
+                    ${foodOptions}
+                </select>
+                <span>×</span>
+                <input type="number" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" onkeydown="if(event.key==='Enter'){app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, this.value); this.blur()}">
+                <button class="control-btn" onclick="app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, document.getElementById('calc-multiplier-${food.id}').value)">計算</button>
+                ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${Math.round(food.weight)}g</span>` : ''}
+            </div>
+        `;
+    }
+
+    renderCardFooter(food) {
+        // 将来的な拡張用
+        return '';
+    }
+
     renderHistory(food) {
         if (!food.history || food.history.length === 0) {
             return '';
@@ -426,7 +452,6 @@ class FoodCalculator {
                     <div class="history-header">履歴</div>
                     <div class="history-items">${historyItems}</div>
                 </div>`;
-    
     }
 
     saveData() {

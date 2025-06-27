@@ -1,0 +1,157 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renderFoodCard スナップショットテスト renderFoodCard の出力が変更されていないこと 1`] = `
+"
+            <div class="card-container" data-food-id="1">
+                <div class="undo-background">
+                    <div class="undo-icon">⟲</div>
+                    <div class="undo-text">取り消し</div>
+                </div>
+                <div class="food-card swipeable">
+                    
+            <div class="food-card-header">
+                <input type="text" class="food-name" value="テスト料理" 
+                       onchange="app.updateFoodName(1, this.value)"
+                       onfocus="this.select()"
+                       onkeydown="if(event.key==='Enter'){this.blur()}">
+                <button class="delete-btn" onclick="app.deleteFood(1)">×</button>
+            </div>
+        
+                    
+            <div class="weight-display" data-copy-value="100" style="cursor: pointer; user-select: none;" title="タップでコピー">100g</div>
+        
+                    <div class="calculation-history">
+                    <div class="history-header">履歴</div>
+                    <div class="history-items"><div class="history-item">
+                        <span class="history-operation">-20g</span>
+                        <span class="history-time">12:30</span>
+                    </div><div class="history-item">
+                        <span class="history-operation">+50g</span>
+                        <span class="history-time">12:00</span>
+                    </div></div>
+                </div>
+                    
+            <div class="controls">
+                <div class="control-row">
+                    <label>重量:</label>
+                    <span></span>
+                    <input type="number" id="weight-input-1" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(1, this.value); this.value=''; this.blur()}">
+                    <button class="control-btn" onclick="app.addWeight(1, document.getElementById('weight-input-1').value); document.getElementById('weight-input-1').value=''">+</button>
+                </div>
+                
+                <div class="control-row">
+                    <label>食器重量:</label>
+                    <select id="dish-select-1" onchange="document.getElementById('dish-weight-1').value = this.value">
+                        <option value="">選択</option>
+                        
+                    </select>
+                    <input type="number" id="dish-weight-1" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(1, this.value); this.value=''; document.getElementById('dish-select-1').value=''; this.blur()}">
+                    <button class="control-btn" onclick="app.subtractWeight(1, document.getElementById('dish-weight-1').value); document.getElementById('dish-weight-1').value=''; document.getElementById('dish-select-1').value=''">-</button>
+                </div>
+                
+                
+            </div>
+        
+                    
+                </div>
+            </div>
+        "
+`;
+
+exports[`renderFoodCard スナップショットテスト 履歴がない場合のrenderFoodCardの出力が変更されていないこと 1`] = `
+"
+            <div class="card-container" data-food-id="3">
+                <div class="undo-background">
+                    <div class="undo-icon">⟲</div>
+                    <div class="undo-text">取り消し</div>
+                </div>
+                <div class="food-card ">
+                    
+            <div class="food-card-header">
+                <input type="text" class="food-name" value="履歴なし料理" 
+                       onchange="app.updateFoodName(3, this.value)"
+                       onfocus="this.select()"
+                       onkeydown="if(event.key==='Enter'){this.blur()}">
+                <button class="delete-btn" onclick="app.deleteFood(3)">×</button>
+            </div>
+        
+                    
+            <div class="weight-display" data-copy-value="50" style="cursor: pointer; user-select: none;" title="タップでコピー">50g</div>
+        
+                    
+                    
+            <div class="controls">
+                <div class="control-row">
+                    <label>重量:</label>
+                    <span></span>
+                    <input type="number" id="weight-input-3" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(3, this.value); this.value=''; this.blur()}">
+                    <button class="control-btn" onclick="app.addWeight(3, document.getElementById('weight-input-3').value); document.getElementById('weight-input-3').value=''">+</button>
+                </div>
+                
+                <div class="control-row">
+                    <label>食器重量:</label>
+                    <select id="dish-select-3" onchange="document.getElementById('dish-weight-3').value = this.value">
+                        <option value="">選択</option>
+                        
+                    </select>
+                    <input type="number" id="dish-weight-3" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(3, this.value); this.value=''; document.getElementById('dish-select-3').value=''; this.blur()}">
+                    <button class="control-btn" onclick="app.subtractWeight(3, document.getElementById('dish-weight-3').value); document.getElementById('dish-weight-3').value=''; document.getElementById('dish-select-3').value=''">-</button>
+                </div>
+                
+                
+            </div>
+        
+                    
+                </div>
+            </div>
+        "
+`;
+
+exports[`renderFoodCard スナップショットテスト 計算設定がない場合のrenderFoodCardの出力が変更されていないこと 1`] = `
+"
+            <div class="card-container" data-food-id="2">
+                <div class="undo-background">
+                    <div class="undo-icon">⟲</div>
+                    <div class="undo-text">取り消し</div>
+                </div>
+                <div class="food-card ">
+                    
+            <div class="food-card-header">
+                <input type="text" class="food-name" value="計算なし料理" 
+                       onchange="app.updateFoodName(2, this.value)"
+                       onfocus="this.select()"
+                       onkeydown="if(event.key==='Enter'){this.blur()}">
+                <button class="delete-btn" onclick="app.deleteFood(2)">×</button>
+            </div>
+        
+                    
+            <div class="weight-display" data-copy-value="200" style="cursor: pointer; user-select: none;" title="タップでコピー">200g</div>
+        
+                    
+                    
+            <div class="controls">
+                <div class="control-row">
+                    <label>重量:</label>
+                    <span></span>
+                    <input type="number" id="weight-input-2" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(2, this.value); this.value=''; this.blur()}">
+                    <button class="control-btn" onclick="app.addWeight(2, document.getElementById('weight-input-2').value); document.getElementById('weight-input-2').value=''">+</button>
+                </div>
+                
+                <div class="control-row">
+                    <label>食器重量:</label>
+                    <select id="dish-select-2" onchange="document.getElementById('dish-weight-2').value = this.value">
+                        <option value="">選択</option>
+                        
+                    </select>
+                    <input type="number" id="dish-weight-2" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(2, this.value); this.value=''; document.getElementById('dish-select-2').value=''; this.blur()}">
+                    <button class="control-btn" onclick="app.subtractWeight(2, document.getElementById('dish-weight-2').value); document.getElementById('dish-weight-2').value=''; document.getElementById('dish-select-2').value=''">-</button>
+                </div>
+                
+                
+            </div>
+        
+                    
+                </div>
+            </div>
+        "
+`;
