@@ -313,8 +313,8 @@ class FoodCalculator {
                 
                 card.style.transition = 'transform 0.3s ease-out';
                 
-                // スワイプ判定（実際に移動 && 閾値以上 && 短時間での操作）
-                if (hasMoved && Math.abs(deltaX) >= this.swipeThreshold && timeDelta < 500) {
+                // スワイプ判定（実際に移動 && 左スワイプ && 閾値以上 && 短時間での操作）
+                if (hasMoved && deltaX <= -this.swipeThreshold && timeDelta < 500) {
                     // Undo実行
                     this.undoLastOperation(foodId);
                 } else {

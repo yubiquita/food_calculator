@@ -569,5 +569,82 @@ describe('ユーティリティ機能とエッジケース', () => {
         }, 300);
       }, 300);
     });
+
+    test('右スワイプではundo機能が動作しない', () => {
+      const food = swipeCalculator.foods[0];
+      const initialHistoryLength = food.history.length;
+      const initialWeight = food.weight;
+      
+      swipeCalculator.render();
+      
+      // DOM更新を待つ
+      const container = document.getElementById('food-cards');
+      expect(container.innerHTML).toContain('swipeable');
+      
+      // スワイプイベントのシミュレーション用のヘルパー関数
+      const simulateTouch = (element, eventType, clientX, timeOffset = 0) => {
+        const event = new TouchEvent(eventType, {
+          touches: eventType === 'touchend' ? [] : [{ clientX }],
+          bubbles: true,
+          cancelable: true
+        });
+        
+        // タイムスタンプを手動で設定
+        Object.defineProperty(event, 'timeStamp', {
+          value: Date.now() + timeOffset
+        });
+        
+        element.dispatchEvent(event);
+      };
+
+      const swipeableCard = document.querySelector('.food-card.swipeable');
+      expect(swipeableCard).toBeTruthy();
+      
+      // 右スワイプのシミュレーション（閾値以上の距離）
+      simulateTouch(swipeableCard, 'touchstart', 50); // 開始位置
+      simulateTouch(swipeableCard, 'touchmove', 140, 25); // 90px右移動
+      simulateTouch(swipeableCard, 'touchend', 140, 50); // 50ms後
+      
+      // 右スワイプではundo機能が動作しないことを確認
+      expect(food.history.length).toBe(initialHistoryLength);
+      expect(food.weight).toBe(initialWeight);
+    });
+
+    test('右方向への長距離スワイプでもundo機能が動作しない', () => {
+      const food = swipeCalculator.foods[0];
+      const initialHistoryLength = food.history.length;
+      const initialWeight = food.weight;
+      
+      swipeCalculator.render();
+      
+      const container = document.getElementById('food-cards');
+      expect(container.innerHTML).toContain('swipeable');
+      
+      const simulateTouch = (element, eventType, clientX, timeOffset = 0) => {
+        const event = new TouchEvent(eventType, {
+          touches: eventType === 'touchend' ? [] : [{ clientX }],
+          bubbles: true,
+          cancelable: true
+        });
+        
+        Object.defineProperty(event, 'timeStamp', {
+          value: Date.now() + timeOffset
+        });
+        
+        element.dispatchEvent(event);
+      };
+
+      const swipeableCard = document.querySelector('.food-card.swipeable');
+      expect(swipeableCard).toBeTruthy();
+      
+      // 右方向への長距離スワイプ（150px移動）
+      simulateTouch(swipeableCard, 'touchstart', 50);
+      simulateTouch(swipeableCard, 'touchmove', 200, 25); // 150px右移動
+      simulateTouch(swipeableCard, 'touchend', 200, 50);
+      
+      // 右スワイプではundo機能が動作しないことを確認
+      expect(food.history.length).toBe(initialHistoryLength);
+      expect(food.weight).toBe(initialWeight);
+    });
   });
 });
