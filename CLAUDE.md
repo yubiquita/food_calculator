@@ -144,7 +144,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### テスト環境
 ```bash
-# 全テスト実行（70個のテストケース）
+# 全テスト実行
 npm test
 
 # 特定のテストグループ実行
@@ -154,6 +154,7 @@ npm test -- --testNamePattern="基本機能"
 # 単一テストファイル実行
 npm test tests/foodCalculator.test.js
 npm test tests/utils.test.js
+npm test tests/renderFoodCard.test.js
 
 # ウォッチモードでテスト実行（開発中の継続テスト）
 npm run test:watch
@@ -176,7 +177,8 @@ npm install
 - **tests/setup.js**: Jestグローバル設定、DOM・localStorage・clipboard モック、script.jsからのFoodCalculator自動インポート、index.htmlからの実際のDOM環境構築
 - **tests/foodCalculator.test.js**: 基本機能、重量操作、データ永続化、UI機能テスト
 - **tests/utils.test.js**: ユーティリティ機能、エッジケース、レンダリングテスト
-- **テストカバレッジ**: 主要ビジネスロジック、エラーハンドリング、UI状態管理を包括
+- **tests/renderFoodCard.test.js**: スナップショットテストによるrenderFoodCard出力の回帰テスト
+- **テストカバレッジ**: 主要ビジネスロジック、エラーハンドリング、UI状態管理、HTML出力の回帰テストを包括
 
 ## テスト開発ガイドライン
 
@@ -188,12 +190,13 @@ npm install
 - **DOM環境**: jest-environment-jsdomでブラウザ環境をシミュレート
 
 ### テスト実行時の確認ポイント
-- 全70テストの実行確認（全テスト通過済み）
+- 全テストの実行確認（全テスト通過済み）
 - DOM環境の安定性確認（DOM要素アクセス完全復旧済み）
 - モック設定の正確性（クリップボード・データ永続化モック完全対応済み）
 - Math.round計算ロジックの精度確認
 - スワイプundo機能のタップ誤動作防止とstate管理
 - テスト間でのデータ分離（独立したインスタンス作成）
+- スナップショットテストによる回帰テスト（HTML出力の変更検出）
 
 ### テスト失敗時のトラブルシューティング
 ```bash
@@ -202,6 +205,7 @@ npm test -- --testNamePattern="Gmail風スワイプUndo機能"
 
 # 単一テストファイルでの詳細確認
 npm test tests/utils.test.js
+npm test tests/renderFoodCard.test.js
 
 # テスト環境のDOM状態確認
 # console.log(document.getElementById('food-cards').innerHTML) をテストに追加
