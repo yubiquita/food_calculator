@@ -36,6 +36,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
             sourceName?: string,    // 計算時のみ
             multiplier?: number     // 計算時のみ
         }
+    ],
+    stateHistory: [       // undo用の状態履歴
+        {
+            weight: number,
+            calculation: object | null
+        }
     ]
 }
 ```
@@ -54,6 +60,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **加算**: 直接重量入力と現在の合計への加算
 - **減算**: 食器重量の減算（手動入力またはプリセット選択）
 - **計算**: 他の食品からの乗算による重量導出（結果は`Math.round()`で整数化）
+- **Gmail風スワイプUndo**: 左スワイプ（80px閾値）で最後の操作を取り消し
 - **クリップボードコピー**: 重量表示をタップして数値のみをコピー
 - **全削除**: 全料理データを削除（カスタム確認モーダル付き）
 
@@ -108,6 +115,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **分離**: 操作エリアと履歴の間に`margin-top: 20px`で適切な分離
 - **スペーサー要素**: 重量行に`<span></span>`を追加して4列構造に統一
 
+### Gmail風スワイプUndo機能
+- **カード構造**: `.card-container`が`.undo-background`と`.food-card`を包含
+- **スワイプ検出**: タッチイベント（`touchstart`, `touchmove`, `touchend`）で左スワイプを検出
+- **視覚フィードバック**: スワイプ中にカードが左移動し、背景の赤いundoアイコンが表示
+- **閾値判定**: 80px以上のスワイプ＋500ms以内の操作でundo実行
+- **状態管理**: 操作前の状態を`stateHistory`に保存し、undo時に復元
+- **履歴連動**: `history`がある場合のみスワイプ可能（`.swipeable`クラス）
+
 ## 開発コマンド
 
 ### アプリケーション実行
@@ -122,7 +137,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### テスト環境
 ```bash
-# 全テスト実行（55個のテストケース）
+# 全テスト実行（63個のテストケース）
 npm test
 
 # 単一テストファイル実行
@@ -162,10 +177,11 @@ npm install
 - **DOM環境**: jest-environment-jsdomでブラウザ環境をシミュレート
 
 ### テスト実行時の確認ポイント
-- 全55テストの完全パス確認
+- 全63テストの完全パス確認（Gmail風スワイプUndo機能含む）
 - モック設定の正確性（特にクリップボード・データ永続化）
 - エラーハンドリングの網羅性
 - Math.round計算ロジックの精度確認
+- スワイプundo機能のstate管理とイベント処理
 
 ## 実装ガイドライン
 
@@ -181,3 +197,13 @@ npm install
 - レイアウト変更時はCSS Gridの4列構造（`80px 100px 100px 60px`）を維持
 - デザインの近接原則に従い、関連要素のグループ化と適切な分離を確保
 - 履歴表示は全件保存・降順表示を採用（`script.js:271`と`tests/setup.js:238`で`.reverse()`使用、最新操作が上に表示されスクロール不要）
+- スワイプundo機能では操作前の状態を`stateHistory`に保存し、undo時に`history`と`stateHistory`の両方から削除
+- 新規食品追加時は`stateHistory: []`の初期化を必須実装
+
+## TODO
+
+- TODO 「計算」機能の自動再計算実装
+- TODO 「計算」結果を他と同様に合計へ足し合わせるように変更
+- TODO 「計算」結果の丸め処理を合計表示前に統合
+- TODO 「計算」結果の履歴表示に食品名も合わせて表示
+- TODO 食器のプルダウンメニューから選択した瞬間に食器の重量を引く処理を実行する

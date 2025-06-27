@@ -10,6 +10,7 @@ global.createFoodCalculator = () => {
       this.dishes = [];
       this.nextId = 1;
       this.theme = 'light';
+      this.swipeThreshold = 80;
     }
 
     addNewFood() {
@@ -18,11 +19,48 @@ global.createFoodCalculator = () => {
         name: `料理${this.foods.length + 1}`,
         weight: 0,
         calculation: null,
-        history: []
+        history: [],
+        stateHistory: []
       };
       this.foods.push(food);
       this.saveData();
       this.render();
+    }
+
+    createStateSnapshot(food) {
+      return {
+        weight: food.weight,
+        calculation: food.calculation ? { ...food.calculation } : null
+      };
+    }
+
+    restoreFromSnapshot(food, snapshot) {
+      food.weight = snapshot.weight;
+      food.calculation = snapshot.calculation ? { ...snapshot.calculation } : null;
+    }
+
+    undoLastOperation(id) {
+      const food = this.foods.find(f => f.id === id);
+      if (!food || !food.history || food.history.length === 0) {
+        return;
+      }
+
+      food.history.pop();
+      
+      if (food.stateHistory && food.stateHistory.length > 0) {
+        const previousState = food.stateHistory.pop();
+        this.restoreFromSnapshot(food, previousState);
+      } else {
+        food.weight = 0;
+        food.calculation = null;
+      }
+
+      this.saveData();
+      this.render();
+    }
+
+    shouldTriggerUndo(swipeDistance) {
+      return Math.abs(swipeDistance) >= this.swipeThreshold;
     }
 
     deleteFood(id) {
@@ -44,6 +82,9 @@ global.createFoodCalculator = () => {
       if (food) {
         const weightValue = parseFloat(weight) || 0;
         if (weightValue !== 0) {
+          if (!food.stateHistory) food.stateHistory = [];
+          food.stateHistory.push(this.createStateSnapshot(food));
+          
           food.weight += weightValue;
           if (!food.history) food.history = [];
           food.history.push({
@@ -62,6 +103,9 @@ global.createFoodCalculator = () => {
       if (food) {
         const weightValue = parseFloat(weight) || 0;
         if (weightValue !== 0) {
+          if (!food.stateHistory) food.stateHistory = [];
+          food.stateHistory.push(this.createStateSnapshot(food));
+          
           food.weight -= weightValue;
           if (!food.history) food.history = [];
           food.history.push({
@@ -80,6 +124,9 @@ global.createFoodCalculator = () => {
       const sourceFood = this.foods.find(f => f.id === parseInt(sourceId));
       
       if (food && sourceFood) {
+        if (!food.stateHistory) food.stateHistory = [];
+        food.stateHistory.push(this.createStateSnapshot(food));
+        
         const multiplierValue = parseFloat(multiplier) || 1;
         const calculatedWeight = Math.round(sourceFood.weight * multiplierValue);
         
@@ -190,7 +237,8 @@ global.createFoodCalculator = () => {
           const parsed = JSON.parse(data);
           this.foods = (parsed.foods || []).map(food => ({
             ...food,
-            history: food.history || []
+            history: food.history || [],
+            stateHistory: food.stateHistory || []
           }));
           this.dishes = parsed.dishes || [];
           this.nextId = parsed.nextId || 1;

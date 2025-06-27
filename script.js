@@ -4,6 +4,7 @@ class FoodCalculator {
         this.dishes = [];
         this.nextId = 1;
         this.theme = 'light';
+        this.swipeThreshold = 80; // スワイプでundoを実行する閾値（px）
         this.init();
     }
 
@@ -42,11 +43,51 @@ class FoodCalculator {
             name: `料理${this.foods.length + 1}`,
             weight: 0,
             calculation: null,
-            history: []
+            history: [],
+            stateHistory: [] // undo用の状態履歴
         };
         this.foods.push(food);
         this.saveData();
         this.render();
+    }
+
+    createStateSnapshot(food) {
+        return {
+            weight: food.weight,
+            calculation: food.calculation ? { ...food.calculation } : null
+        };
+    }
+
+    restoreFromSnapshot(food, snapshot) {
+        food.weight = snapshot.weight;
+        food.calculation = snapshot.calculation ? { ...snapshot.calculation } : null;
+    }
+
+    undoLastOperation(id) {
+        const food = this.foods.find(f => f.id === id);
+        if (!food || !food.history || food.history.length === 0) {
+            return;
+        }
+
+        // 履歴から最後の操作を削除
+        food.history.pop();
+        
+        // 状態履歴から復元
+        if (food.stateHistory && food.stateHistory.length > 0) {
+            const previousState = food.stateHistory.pop();
+            this.restoreFromSnapshot(food, previousState);
+        } else {
+            // 初期状態に戻す
+            food.weight = 0;
+            food.calculation = null;
+        }
+
+        this.saveData();
+        this.render();
+    }
+
+    shouldTriggerUndo(swipeDistance) {
+        return Math.abs(swipeDistance) >= this.swipeThreshold;
     }
 
     deleteFood(id) {
@@ -84,6 +125,10 @@ class FoodCalculator {
         if (food) {
             const weightValue = parseFloat(weight) || 0;
             if (weightValue !== 0) {
+                // 操作前の状態を保存
+                if (!food.stateHistory) food.stateHistory = [];
+                food.stateHistory.push(this.createStateSnapshot(food));
+                
                 food.weight += weightValue;
                 if (!food.history) food.history = [];
                 food.history.push({
@@ -102,6 +147,10 @@ class FoodCalculator {
         if (food) {
             const weightValue = parseFloat(weight) || 0;
             if (weightValue !== 0) {
+                // 操作前の状態を保存
+                if (!food.stateHistory) food.stateHistory = [];
+                food.stateHistory.push(this.createStateSnapshot(food));
+                
                 food.weight -= weightValue;
                 if (!food.history) food.history = [];
                 food.history.push({
@@ -120,6 +169,10 @@ class FoodCalculator {
         const sourceFood = this.foods.find(f => f.id === parseInt(sourceId));
         
         if (food && sourceFood) {
+            // 操作前の状態を保存
+            if (!food.stateHistory) food.stateHistory = [];
+            food.stateHistory.push(this.createStateSnapshot(food));
+            
             const multiplierValue = parseFloat(multiplier) || 1;
             const calculatedWeight = Math.round(sourceFood.weight * multiplierValue);
             
@@ -202,6 +255,75 @@ class FoodCalculator {
                 }
             });
         });
+
+        // スワイプイベントを追加
+        this.initSwipeEvents();
+    }
+
+    initSwipeEvents() {
+        const swipeableCards = document.querySelectorAll('.food-card.swipeable');
+        
+        swipeableCards.forEach(card => {
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+            let startTime = 0;
+            
+            const cardContainer = card.parentElement;
+            const foodId = parseInt(cardContainer.getAttribute('data-food-id'));
+            
+            // タッチ開始
+            card.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                startTime = Date.now();
+                isDragging = true;
+                card.style.transition = 'none';
+            }, { passive: true });
+            
+            // タッチ移動
+            card.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                
+                currentX = e.touches[0].clientX;
+                const deltaX = currentX - startX;
+                
+                // 左スワイプのみ許可
+                if (deltaX < 0) {
+                    const translateX = Math.max(deltaX, -120); // 最大120px移動
+                    card.style.transform = `translateX(${translateX}px)`;
+                    
+                    // undoアイコンの表示度を調整
+                    const opacity = Math.min(Math.abs(translateX) / this.swipeThreshold, 1);
+                    const undoBackground = cardContainer.querySelector('.undo-background');
+                    undoBackground.style.opacity = opacity;
+                }
+            }, { passive: true });
+            
+            // タッチ終了
+            card.addEventListener('touchend', (e) => {
+                if (!isDragging) return;
+                
+                isDragging = false;
+                const deltaX = currentX - startX;
+                const timeDelta = Date.now() - startTime;
+                
+                card.style.transition = 'transform 0.3s ease-out';
+                
+                // スワイプ判定（閾値以上 && 短時間での操作）
+                if (Math.abs(deltaX) >= this.swipeThreshold && timeDelta < 500) {
+                    // Undo実行
+                    this.undoLastOperation(foodId);
+                } else {
+                    // 元の位置に戻す
+                    card.style.transform = 'translateX(0)';
+                    const undoBackground = cardContainer.querySelector('.undo-background');
+                    undoBackground.style.opacity = '0';
+                }
+                
+                currentX = 0;
+                startX = 0;
+            }, { passive: true });
+        });
     }
 
     renderFoodCard(food) {
@@ -213,51 +335,59 @@ class FoodCalculator {
             `<option value="${f.id}">${f.name}</option>`
         ).join('');
 
+        const hasHistory = food.history && food.history.length > 0;
+
         return `
-            <div class="food-card">
-                <div class="food-card-header">
-                    <input type="text" class="food-name" value="${food.name}" 
-                           onchange="app.updateFoodName(${food.id}, this.value)"
-                           onfocus="this.select()"
-                           onkeydown="if(event.key==='Enter'){this.blur()}">
-                    <button class="delete-btn" onclick="app.deleteFood(${food.id})">×</button>
+            <div class="card-container" data-food-id="${food.id}">
+                <div class="undo-background">
+                    <div class="undo-icon">⟲</div>
+                    <div class="undo-text">取り消し</div>
                 </div>
-                
-                <div class="weight-display" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;" title="タップでコピー">${Math.round(food.weight)}g</div>
-                
-                ${this.renderHistory(food)}
-                
-                <div class="controls">
-                    <div class="control-row">
-                        <label>重量:</label>
-                        <span></span>
-                        <input type="number" id="weight-input-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(${food.id}, this.value); this.value=''; this.blur()}">
-                        <button class="control-btn" onclick="app.addWeight(${food.id}, document.getElementById('weight-input-${food.id}').value); document.getElementById('weight-input-${food.id}').value=''">+</button>
+                <div class="food-card ${hasHistory ? 'swipeable' : ''}">
+                    <div class="food-card-header">
+                        <input type="text" class="food-name" value="${food.name}" 
+                               onchange="app.updateFoodName(${food.id}, this.value)"
+                               onfocus="this.select()"
+                               onkeydown="if(event.key==='Enter'){this.blur()}">
+                        <button class="delete-btn" onclick="app.deleteFood(${food.id})">×</button>
                     </div>
                     
-                    <div class="control-row">
-                        <label>食器重量:</label>
-                        <select id="dish-select-${food.id}" onchange="document.getElementById('dish-weight-${food.id}').value = this.value">
-                            <option value="">選択</option>
-                            ${dishOptions}
-                        </select>
-                        <input type="number" id="dish-weight-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(${food.id}, this.value); this.value=''; document.getElementById('dish-select-${food.id}').value=''; this.blur()}">
-                        <button class="control-btn" onclick="app.subtractWeight(${food.id}, document.getElementById('dish-weight-${food.id}').value); document.getElementById('dish-weight-${food.id}').value=''; document.getElementById('dish-select-${food.id}').value=''">-</button>
-                    </div>
+                    <div class="weight-display" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;" title="タップでコピー">${Math.round(food.weight)}g</div>
                     
-                    ${foodOptions ? `
-                    <div class="calculation-row">
-                        <label>計算:</label>
-                        <select id="calc-source-${food.id}">
-                            <option value="">選択</option>
-                            ${foodOptions}
-                        </select>
-                        <span>×</span>
-                        <input type="number" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" onkeydown="if(event.key==='Enter'){app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, this.value); this.blur()}">
-                        <button class="control-btn" onclick="app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, document.getElementById('calc-multiplier-${food.id}').value)">計算</button>
-                        ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${Math.round(food.weight)}g</span>` : ''}
+                    ${this.renderHistory(food)}
+                    
+                    <div class="controls">
+                        <div class="control-row">
+                            <label>重量:</label>
+                            <span></span>
+                            <input type="number" id="weight-input-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.addWeight(${food.id}, this.value); this.value=''; this.blur()}">
+                            <button class="control-btn" onclick="app.addWeight(${food.id}, document.getElementById('weight-input-${food.id}').value); document.getElementById('weight-input-${food.id}').value=''">+</button>
+                        </div>
+                        
+                        <div class="control-row">
+                            <label>食器重量:</label>
+                            <select id="dish-select-${food.id}" onchange="document.getElementById('dish-weight-${food.id}').value = this.value">
+                                <option value="">選択</option>
+                                ${dishOptions}
+                            </select>
+                            <input type="number" id="dish-weight-${food.id}" placeholder="0" onkeydown="if(event.key==='Enter'){app.subtractWeight(${food.id}, this.value); this.value=''; document.getElementById('dish-select-${food.id}').value=''; this.blur()}">
+                            <button class="control-btn" onclick="app.subtractWeight(${food.id}, document.getElementById('dish-weight-${food.id}').value); document.getElementById('dish-weight-${food.id}').value=''; document.getElementById('dish-select-${food.id}').value=''">-</button>
+                        </div>
+                        
+                        ${foodOptions ? `
+                        <div class="calculation-row">
+                            <label>計算:</label>
+                            <select id="calc-source-${food.id}">
+                                <option value="">選択</option>
+                                ${foodOptions}
+                            </select>
+                            <span>×</span>
+                            <input type="number" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" onkeydown="if(event.key==='Enter'){app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, this.value); this.blur()}">
+                            <button class="control-btn" onclick="app.updateCalculation(${food.id}, document.getElementById('calc-source-${food.id}').value, document.getElementById('calc-multiplier-${food.id}').value)">計算</button>
+                            ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${Math.round(food.weight)}g</span>` : ''}
+                        </div>
+                        ` : ''}
                     </div>
-                    ` : ''}
                 </div>
             </div>
         `;
@@ -309,7 +439,8 @@ class FoodCalculator {
             const parsed = JSON.parse(data);
             this.foods = (parsed.foods || []).map(food => ({
                 ...food,
-                history: food.history || []
+                history: food.history || [],
+                stateHistory: food.stateHistory || []
             }));
             this.dishes = parsed.dishes || [];
             this.nextId = parsed.nextId || 1;

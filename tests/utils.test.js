@@ -221,6 +221,124 @@ describe('ユーティリティ機能とエッジケース', () => {
     });
   });
 
+  describe('スワイプUndo機能', () => {
+    beforeEach(() => {
+      calculator.addNewFood();
+    });
+
+    test('状態スナップショットを作成できる', () => {
+      const food = calculator.foods[0];
+      food.weight = 100;
+      food.calculation = { sourceId: 2, multiplier: 0.5 };
+      
+      const snapshot = calculator.createStateSnapshot(food);
+      
+      expect(snapshot).toEqual({
+        weight: 100,
+        calculation: { sourceId: 2, multiplier: 0.5 }
+      });
+    });
+
+    test('状態スナップショットから復元できる', () => {
+      const food = calculator.foods[0];
+      food.weight = 200;
+      food.calculation = { sourceId: 3, multiplier: 0.8 };
+      
+      const snapshot = { weight: 100, calculation: null };
+      
+      calculator.restoreFromSnapshot(food, snapshot);
+      
+      expect(food.weight).toBe(100);
+      expect(food.calculation).toBeNull();
+    });
+
+    test('最後の操作をUndoできる', () => {
+      const foodId = calculator.foods[0].id;
+      
+      // 初期状態
+      expect(calculator.foods[0].weight).toBe(0);
+      
+      // 重量追加
+      calculator.addWeight(foodId, '100');
+      expect(calculator.foods[0].weight).toBe(100);
+      expect(calculator.foods[0].history).toHaveLength(1);
+      
+      // Undo実行
+      calculator.undoLastOperation(foodId);
+      
+      // 重量は元に戻り、履歴から削除される
+      expect(calculator.foods[0].weight).toBe(0);
+      expect(calculator.foods[0].history).toHaveLength(0);
+    });
+
+    test('複数操作後のUndoが正しく動作する', () => {
+      const foodId = calculator.foods[0].id;
+      
+      calculator.addWeight(foodId, '100');
+      calculator.addWeight(foodId, '50');
+      calculator.subtractWeight(foodId, '20');
+      
+      expect(calculator.foods[0].weight).toBe(130);
+      expect(calculator.foods[0].history).toHaveLength(3);
+      
+      // 最後の減算操作をUndo
+      calculator.undoLastOperation(foodId);
+      
+      expect(calculator.foods[0].weight).toBe(150);
+      expect(calculator.foods[0].history).toHaveLength(2);
+    });
+
+    test('計算操作のUndoが正しく動作する', () => {
+      calculator.addNewFood(); // 2つ目の食品
+      calculator.foods[0].weight = 200;
+      
+      const targetId = calculator.foods[1].id;
+      const sourceId = calculator.foods[0].id;
+      
+      // 計算実行
+      calculator.updateCalculation(targetId, sourceId.toString(), '0.6');
+      expect(calculator.foods[1].weight).toBe(120);
+      expect(calculator.foods[1].calculation).toBeDefined();
+      
+      // Undo実行
+      calculator.undoLastOperation(targetId);
+      
+      expect(calculator.foods[1].weight).toBe(0);
+      expect(calculator.foods[1].calculation).toBeNull();
+    });
+
+    test('履歴がない場合はUndoできない', () => {
+      const foodId = calculator.foods[0].id;
+      
+      expect(calculator.foods[0].history).toHaveLength(0);
+      
+      // Undoを試行（エラーにならない）
+      calculator.undoLastOperation(foodId);
+      
+      expect(calculator.foods[0].weight).toBe(0);
+      expect(calculator.foods[0].history).toHaveLength(0);
+    });
+
+    test('存在しないIDでUndoしても何も起こらない', () => {
+      expect(() => {
+        calculator.undoLastOperation(999);
+      }).not.toThrow();
+    });
+
+    test('スワイプ検出の閾値判定が正しく動作する', () => {
+      const foodId = calculator.foods[0].id;
+      calculator.addWeight(foodId, '100');
+      
+      // 閾値未満（70px）
+      const smallSwipe = calculator.shouldTriggerUndo(70);
+      expect(smallSwipe).toBe(false);
+      
+      // 閾値以上（90px）
+      const largeSwipe = calculator.shouldTriggerUndo(90);
+      expect(largeSwipe).toBe(true);
+    });
+  });
+
   describe('レンダリング機能', () => {
     test('食品カードが正しく生成される', () => {
       const food = {
