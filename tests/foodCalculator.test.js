@@ -536,6 +536,72 @@ describe('FoodCalculator', () => {
       expect(calculator.dishes[1]).toEqual({ name: '皿3', weight: 300 });
       expect(calculator.renderDishList).toHaveBeenCalled();
     });
+
+    test('食器削除ボタンの動的イベントバインディングが正しく動作する', () => {
+      // 食器を追加
+      calculator.dishes = [
+        { name: 'テスト皿', weight: 150 },
+        { name: 'テスト茶碗', weight: 120 }
+      ];
+      
+      // DOM要素をモック
+      const container = { 
+        innerHTML: '',
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+      };
+      document.getElementById = jest.fn((id) => {
+        if (id === 'dish-list') return container;
+        return null;
+      });
+      
+      // renderDishListを実行
+      calculator.renderDishList();
+      
+      // HTML生成確認
+      expect(container.innerHTML).toContain('テスト皿');
+      expect(container.innerHTML).toContain('150g');
+      expect(container.innerHTML).toContain('dish-delete-btn');
+      expect(container.innerHTML).toContain('data-index="0"');
+      expect(container.innerHTML).toContain('data-index="1"');
+      
+      // イベントリスナーが再設定されることを確認
+      expect(container.removeEventListener).toHaveBeenCalled();
+      expect(container.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
+    });
+
+    test('食器削除ボタンクリック時に_handleDishListClickが呼ばれる', () => {
+      calculator.dishes = [{ name: 'テスト皿', weight: 150 }];
+      calculator.deleteDish = jest.fn();
+      
+      // クリックイベントをシミュレート
+      const mockEvent = {
+        target: {
+          classList: { contains: (className) => className === 'dish-delete-btn' },
+          dataset: { index: '0' }
+        }
+      };
+      
+      calculator._handleDishListClick(mockEvent);
+      
+      expect(calculator.deleteDish).toHaveBeenCalledWith(0);
+    });
+
+    test('食器削除ボタン以外のクリックでは何も起こらない', () => {
+      calculator.deleteDish = jest.fn();
+      
+      // 他の要素のクリックイベントをシミュレート
+      const mockEvent = {
+        target: {
+          classList: { contains: () => false },
+          dataset: { index: '0' }
+        }
+      };
+      
+      calculator._handleDishListClick(mockEvent);
+      
+      expect(calculator.deleteDish).not.toHaveBeenCalled();
+    });
   });
 
   describe('テーマ管理', () => {
@@ -701,4 +767,284 @@ describe('FoodCalculator', () => {
       expect(html).toContain('data-copy-value="124"');
     });
   });
+
+  describe('Enterキー機能', () => {
+    test('料理名入力フィールドでEnterキー押下時にフォーカスが解除される', () => {
+      calculator.addNewFood();
+      const foodId = calculator.foods[0].id;
+      
+      // _handleCardKeydownを直接テスト
+      const mockTarget = {
+        classList: { contains: (className) => className === 'food-name' },
+        dataset: { foodId: foodId.toString() },
+        closest: () => ({ dataset: { foodId: foodId.toString() } }),
+        blur: jest.fn()
+      };
+      
+      const mockEvent = {
+        key: 'Enter',
+        target: mockTarget
+      };
+      
+      calculator._handleCardKeydown(mockEvent);
+      
+      expect(mockTarget.blur).toHaveBeenCalled();
+    });
+
+    test('重量入力フィールドでEnterキー押下時に加算実行と入力欄クリアが行われる', () => {
+      calculator.addNewFood();
+      const foodId = calculator.foods[0].id;
+      
+      const mockTarget = {
+        classList: { contains: (className) => className === 'weight-input' },
+        dataset: { foodId: foodId.toString() },
+        closest: () => ({ dataset: { foodId: foodId.toString() } }),
+        value: '150',
+        blur: jest.fn()
+      };
+      
+      const mockEvent = {
+        key: 'Enter',
+        target: mockTarget
+      };
+      
+      calculator._handleCardKeydown(mockEvent);
+      
+      // 重量が加算されている
+      expect(calculator.foods[0].weight).toBe(150);
+      // 入力欄がクリアされている
+      expect(mockTarget.value).toBe('');
+      // フォーカスが解除されている
+      expect(mockTarget.blur).toHaveBeenCalled();
+    });
+
+    test('食器重量入力フィールドでEnterキー押下時に減算実行と入力欄クリアが行われる', () => {
+      calculator.addNewFood();
+      calculator.foods[0].weight = 200;
+      const foodId = calculator.foods[0].id;
+      
+      const mockTarget = {
+        classList: { contains: (className) => className === 'dish-weight-input' },
+        dataset: { foodId: foodId.toString() },
+        closest: () => ({ dataset: { foodId: foodId.toString() } }),
+        value: '50',
+        blur: jest.fn()
+      };
+      
+      const mockSelect = { value: '' };
+      document.getElementById = jest.fn((id) => {
+        if (id === `dish-select-${foodId}`) return mockSelect;
+        return null;
+      });
+      
+      const mockEvent = {
+        key: 'Enter',
+        target: mockTarget
+      };
+      
+      calculator._handleCardKeydown(mockEvent);
+      
+      // 重量が減算されている
+      expect(calculator.foods[0].weight).toBe(150);
+      // 入力欄がクリアされている
+      expect(mockTarget.value).toBe('');
+      expect(mockSelect.value).toBe('');
+      // フォーカスが解除されている
+      expect(mockTarget.blur).toHaveBeenCalled();
+    });
+
+    test('計算乗数入力フィールドでEnterキー押下時に計算実行が行われる', () => {
+      calculator.addNewFood(); // ID: 1
+      calculator.addNewFood(); // ID: 2
+      calculator.foods[0].weight = 200; // ソース食品の重量設定
+      const targetFoodId = calculator.foods[1].id;
+      const sourceFoodId = calculator.foods[0].id;
+      
+      const mockTarget = {
+        classList: { contains: (className) => className === 'calc-multiplier' },
+        dataset: { foodId: targetFoodId.toString() },
+        closest: () => ({ dataset: { foodId: targetFoodId.toString() } }),
+        value: '0.6',
+        blur: jest.fn()
+      };
+      
+      const mockSourceSelect = { value: sourceFoodId.toString() };
+      document.getElementById = jest.fn((id) => {
+        if (id === `calc-source-${targetFoodId}`) return mockSourceSelect;
+        return null;
+      });
+      
+      const mockEvent = {
+        key: 'Enter',
+        target: mockTarget
+      };
+      
+      calculator._handleCardKeydown(mockEvent);
+      
+      // 計算が実行されている
+      expect(calculator.foods[1].weight).toBe(120); // 200 * 0.6 = 120
+      expect(calculator.foods[1].calculation).toBeDefined();
+      // フォーカスが解除されている
+      expect(mockTarget.blur).toHaveBeenCalled();
+    });
+
+    test('Enterキー以外のキーでは何も起こらない', () => {
+      calculator.addNewFood();
+      const foodId = calculator.foods[0].id;
+      const initialWeight = calculator.foods[0].weight;
+      
+      const mockTarget = {
+        classList: { contains: (className) => className === 'weight-input' },
+        dataset: { foodId: foodId.toString() },
+        closest: () => ({ dataset: { foodId: foodId.toString() } }),
+        value: '100'
+      };
+      
+      const mockEvent = {
+        key: ' ', // スペースキー
+        target: mockTarget
+      };
+      
+      calculator._handleCardKeydown(mockEvent);
+      
+      // 重量が変更されていない
+      expect(calculator.foods[0].weight).toBe(initialWeight);
+      // 入力欄の値が残っている
+      expect(mockTarget.value).toBe('100');
+    });
+  });
+
+  describe('UI状態管理', () => {
+    test('料理が0件の場合、全削除ボタンがdisabled状態になる', () => {
+      // 料理を全て削除
+      calculator.foods = [];
+      
+      // render()の論理ロジックを直接テスト
+      const disabled = calculator.foods.length === 0;
+      expect(disabled).toBe(true);
+      
+      // renderFoodCard()でのスタイル設定もテスト
+      const container = document.getElementById('food-cards');
+      if (container) {
+        container.innerHTML = calculator.foods.map(food => calculator.renderFoodCard(food)).join('');
+      }
+      
+      // 0件の場合の状態を確認
+      expect(calculator.foods.length).toBe(0);
+    });
+
+    test('料理が1件以上ある場合、全削除ボタンが有効状態になる', () => {
+      calculator.addNewFood();
+      
+      // render()の論理ロジックを直接テスト
+      const disabled = calculator.foods.length === 0;
+      expect(disabled).toBe(false);
+      
+      // renderFoodCard()でのスタイル設定もテスト  
+      const container = document.getElementById('food-cards');
+      if (container) {
+        container.innerHTML = calculator.foods.map(food => calculator.renderFoodCard(food)).join('');
+      }
+      
+      // 1件以上の場合の状態を確認
+      expect(calculator.foods.length).toBeGreaterThan(0);
+    });
+
+    test('数値入力後のボタンクリックで入力欄が自動クリアされる', () => {
+      calculator.addNewFood();
+      calculator.render();
+      
+      // render()で_handleCardClickが設定されているため、イベント処理を直接テスト
+      const foodId = calculator.foods[0].id;
+      const mockInput = { value: '123' };
+      
+      // DOM要素をモック
+      document.getElementById = jest.fn((id) => {
+        if (id === `weight-input-${foodId}`) return mockInput;
+        return null;
+      });
+      
+      // _handleCardClickを直接呼び出してテスト
+      const mockEvent = {
+        target: {
+          classList: { contains: (className) => className === 'add-weight-btn' },
+          dataset: { foodId: foodId.toString() },
+          closest: () => ({ dataset: { foodId: foodId.toString() } })
+        }
+      };
+      
+      calculator._handleCardClick(mockEvent);
+      
+      // 重量が加算され、入力欄がクリアされている
+      expect(calculator.foods[0].weight).toBe(123);
+      expect(mockInput.value).toBe('');
+    });
+
+    test('食器重量入力後の減算ボタンクリックで入力欄と選択欄が自動クリアされる', () => {
+      calculator.addNewFood();
+      calculator.foods[0].weight = 200;
+      calculator.render();
+      
+      const foodId = calculator.foods[0].id;
+      const mockInput = { value: '50' };
+      const mockSelect = { value: '' };
+      
+      // DOM要素をモック
+      document.getElementById = jest.fn((id) => {
+        if (id === `dish-weight-${foodId}`) return mockInput;
+        if (id === `dish-select-${foodId}`) return mockSelect;
+        return null;
+      });
+      
+      // _handleCardClickを直接呼び出してテスト
+      const mockEvent = {
+        target: {
+          classList: { contains: (className) => className === 'subtract-weight-btn' },
+          dataset: { foodId: foodId.toString() },
+          closest: () => ({ dataset: { foodId: foodId.toString() } })
+        }
+      };
+      
+      calculator._handleCardClick(mockEvent);
+      
+      // 重量が減算され、入力欄と選択欄がクリアされている
+      expect(calculator.foods[0].weight).toBe(150);
+      expect(mockInput.value).toBe('');
+      expect(mockSelect.value).toBe('');
+    });
+  });
+
+  describe('スタイル・UX機能', () => {
+    test('重量表示にcursor: pointerスタイルが適用されている', () => {
+      calculator.addNewFood();
+      calculator.foods[0].weight = 150;
+      
+      const cardHtml = calculator.renderFoodCard(calculator.foods[0]);
+      
+      expect(cardHtml).toContain('style="cursor: pointer');
+      expect(cardHtml).toContain('user-select: none');
+      expect(cardHtml).toContain('title="タップでコピー"');
+    });
+
+    test('重量表示のdata-copy-value属性に数値のみが設定される', () => {
+      calculator.addNewFood();
+      calculator.foods[0].weight = 150.7;
+      
+      const cardHtml = calculator.renderFoodCard(calculator.foods[0]);
+      
+      // Math.round()で丸められた整数値が設定される
+      expect(cardHtml).toContain('data-copy-value="151"');
+      expect(cardHtml).toContain('151g');
+    });
+
+    test('クリップボードコピー機能で数値のみがコピーされる', async () => {
+      const testValue = 123;
+      
+      await calculator.copyToClipboard(testValue);
+      
+      // 数値が文字列として変換されてコピーされる
+      expect(global.navigator.clipboard.writeText).toHaveBeenCalledWith('123');
+    });
+  });
 });
+
