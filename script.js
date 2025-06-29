@@ -446,7 +446,7 @@ class FoodCalculator {
         return `
             <div class="food-card-header">
                 <input type="text" class="food-name" value="${food.name}" 
-                       data-food-id="${food.id}">
+                       data-food-id="${food.id}" onfocus="this.select()">
                 <button class="delete-btn" data-food-id="${food.id}">×</button>
             </div>
         `;

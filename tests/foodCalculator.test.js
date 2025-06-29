@@ -74,6 +74,41 @@ describe('FoodCalculator', () => {
     });
   });
 
+  describe('食事名入力UI機能', () => {
+    beforeEach(() => {
+      calculator.addNewFood();
+      calculator.render();
+    });
+
+    test('食事名入力フィールドにonfocus属性が設定されている', () => {
+      const foodNameInput = document.querySelector('.food-name');
+      
+      expect(foodNameInput).toBeTruthy();
+      expect(foodNameInput.getAttribute('onfocus')).toBe('this.select()');
+    });
+
+    test('食事名入力フィールドのフォーカス時に全選択される', () => {
+      const foodNameInput = document.querySelector('.food-name');
+      const selectSpy = jest.spyOn(foodNameInput, 'select').mockImplementation(() => {});
+      
+      // onfocusイベントを発火
+      const focusEvent = new Event('focus');
+      foodNameInput.dispatchEvent(focusEvent);
+      
+      expect(selectSpy).toHaveBeenCalled();
+      selectSpy.mockRestore();
+    });
+
+    test('食事名入力フィールドがちゃんと表示されている', () => {
+      const foodNameInput = document.querySelector('.food-name');
+      
+      expect(foodNameInput).toBeTruthy();
+      expect(foodNameInput.tagName).toBe('INPUT');
+      expect(foodNameInput.type).toBe('text');
+      expect(foodNameInput.value).toBe('料理1');
+    });
+  });
+
   describe('確認モーダル', () => {
     test('料理がある場合は確認モーダルを表示する', () => {
       calculator.addNewFood();
@@ -565,6 +600,105 @@ describe('FoodCalculator', () => {
       
       expect(themeIcon.textContent).toBe('🌙');
       expect(themeText.textContent).toBe('ダーク');
+    });
+  });
+
+  describe('renderFoodCard()機能テスト', () => {
+    let testFood;
+
+    beforeEach(() => {
+      testFood = {
+        id: 1,
+        name: 'テスト料理',
+        weight: 150,
+        history: [
+          { type: 'add', value: 100, timestamp: '12:00' },
+          { type: 'subtract', value: 50, timestamp: '12:30' }
+        ],
+        calculation: null
+      };
+    });
+
+    test('食事名入力フィールドが正しい値で表示される', () => {
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).toContain('class="food-name"');
+      expect(html).toContain('value="テスト料理"');
+      expect(html).toContain('data-food-id="1"');
+      expect(html).toContain('onfocus="this.select()"');
+    });
+
+    test('重量表示が正確な値で表示される', () => {
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).toContain('class="weight-display"');
+      expect(html).toContain('data-copy-value="150"');
+      expect(html).toContain('150g');
+    });
+
+    test('削除ボタンが適切なクラスとdata属性を持つ', () => {
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).toContain('class="delete-btn"');
+      expect(html).toContain('data-food-id="1"');
+      expect(html).toContain('×');
+    });
+
+    test('履歴がある場合はスワイプ可能クラスが設定される', () => {
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).toContain('class="food-card swipeable"');
+    });
+
+    test('履歴がない場合はスワイプ可能クラスが設定されない', () => {
+      testFood.history = [];
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).toContain('class="food-card "');
+      expect(html).not.toContain('swipeable');
+    });
+
+    test('計算設定がある場合は計算情報が表示される', () => {
+      testFood.calculation = {
+        sourceId: 2,
+        multiplier: 0.6
+      };
+      calculator.foods = [
+        { id: 2, name: 'ソース料理', weight: 100 },
+        testFood
+      ];
+      
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).toContain('計算:');
+      expect(html).toContain('calc-source');
+      expect(html).toContain('calc-multiplier');
+    });
+
+    test('計算設定がない場合は計算情報が表示されない', () => {
+      testFood.calculation = null;
+      calculator.foods = [testFood];
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).not.toContain('計算:');
+      expect(html).not.toContain('calc-source');
+    });
+
+    test('履歴が正しく表示される', () => {
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).toContain('100g');
+      expect(html).toContain('50g');
+      expect(html).toContain('12:00');
+      expect(html).toContain('12:30');
+    });
+
+    test('重量が整数で丸められて表示される', () => {
+      testFood.weight = 123.7;
+      const html = calculator.renderFoodCard(testFood);
+      
+      expect(html).toContain('124g');
+      expect(html).toContain('data-copy-value="124"');
     });
   });
 });
