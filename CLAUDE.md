@@ -20,9 +20,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### アプリケーション実行
 ```bash
-# ローカル開発
-# 任意のモダンブラウザでindex.htmlを直接開く
-# ビルドプロセスやサーバーは不要
+# ローカル開発サーバー（推奨）
+npx http-server -p 8080
+# ブラウザで http://127.0.0.1:8080 にアクセス
+# CSS/JavaScriptの読み込み問題を回避
+
+# 直接ファイル開く（非推奨）
+# index.htmlを直接ブラウザで開く
+# Content URI経由では相対パスリソースが読み込めない
 
 # GitHub Pages デプロイ
 # git push で自動デプロイ（通常40秒程度で反映）
