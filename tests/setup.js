@@ -16,7 +16,7 @@ global.createFoodCalculator = () => {
     init() {
       // DOM初期化をスキップ
       this.loadData();
-      this.initTheme();
+      // initTheme()もテスト環境では実行しない
       // bindEvents()とrender()はテスト環境では実行しない
     }
     
@@ -41,11 +41,28 @@ global.createFoodCalculator = () => {
     }
     
     saveData() {
-      // テスト環境ではlocalStorage操作をスキップ
+      // テスト環境でもlocalStorage操作を実行
+      localStorage.setItem('foodCalculatorData', JSON.stringify({
+        foods: this.foods,
+        dishes: this.dishes,
+        nextId: this.nextId,
+        theme: this.theme
+      }));
     }
     
     loadData() {
-      // テスト環境ではlocalStorage操作をスキップ
+      // テスト環境でもlocalStorage操作を実行
+      const data = localStorage.getItem('foodCalculatorData');
+      if (data) {
+        const parsed = JSON.parse(data);
+        this.foods = (parsed.foods || []).map(food => ({
+          ...food,
+          stateHistory: food.stateHistory || []
+        }));
+        this.dishes = parsed.dishes || [];
+        this.nextId = parsed.nextId || 1;
+        this.theme = parsed.theme || 'light';
+      }
     }
     
     initTheme() {

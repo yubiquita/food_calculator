@@ -4,7 +4,8 @@ describe('FoodCalculator', () => {
   let calculator;
 
   beforeEach(() => {
-    calculator = new FoodCalculator();
+    localStorage.clear();
+    calculator = createFoodCalculator();
   });
 
   describe('基本機能', () => {
@@ -1789,6 +1790,130 @@ describe('FoodCalculator', () => {
       
       // 初期状態では show クラスがない（アニメーション前）
       expect(toast.classList.contains('show')).toBe(false);
+    });
+  });
+
+  describe('テーマ機能', () => {
+    let calculator;
+    let originalQuerySelector;
+    let mockThemeIcon;
+    let mockThemeText;
+
+    beforeEach(() => {
+      // localStorageをクリア
+      localStorage.clear();
+      
+      // 直接TestFoodCalculatorインスタンスを作成
+      calculator = createFoodCalculator();
+      
+      // テーマボタン要素のモック
+      mockThemeIcon = { textContent: '' };
+      mockThemeText = { textContent: '' };
+      
+      // document.querySelector のオリジナルを保存
+      originalQuerySelector = document.querySelector;
+      
+      // document.querySelector をモック
+      document.querySelector = jest.fn((selector) => {
+        if (selector === '.theme-icon') return mockThemeIcon;
+        if (selector === '.theme-text') return mockThemeText;
+        return originalQuerySelector.call(document, selector);
+      });
+    });
+
+    afterEach(() => {
+      // document.querySelector をオリジナルに戻す
+      document.querySelector = originalQuerySelector;
+    });
+
+    test('デフォルトテーマはlightである', () => {
+      expect(calculator.theme).toBe('light');
+    });
+
+    test('テーマ切り替えでlightからdarkに変更される', () => {
+      calculator.toggleTheme();
+      
+      expect(calculator.theme).toBe('dark');
+      expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'dark');
+    });
+
+    test('テーマ切り替えでdarkからlightに変更される', () => {
+      calculator.theme = 'dark';
+      
+      calculator.toggleTheme();
+      
+      expect(calculator.theme).toBe('light');
+      expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'light');
+    });
+
+    test('initThemeでDOM属性が設定される', () => {
+      calculator.theme = 'dark';
+      
+      calculator.initTheme();
+      
+      expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'dark');
+    });
+
+    test('updateThemeButtonでダークテーマ時のボタン表示が更新される', () => {
+      calculator.theme = 'dark';
+      
+      calculator.updateThemeButton();
+      
+      expect(mockThemeIcon.textContent).toBe('☀️');
+      expect(mockThemeText.textContent).toBe('ライト');
+    });
+
+    test('updateThemeButtonでライトテーマ時のボタン表示が更新される', () => {
+      calculator.theme = 'light';
+      
+      calculator.updateThemeButton();
+      
+      expect(mockThemeIcon.textContent).toBe('🌙');
+      expect(mockThemeText.textContent).toBe('ダーク');
+    });
+
+    test('テーマ設定がlocalStorageに保存される', () => {
+      calculator.theme = 'light';
+      
+      calculator.toggleTheme();
+      
+      const savedData = JSON.parse(localStorage.getItem('foodCalculatorData'));
+      expect(savedData.theme).toBe('dark');
+    });
+
+    test('アプリ起動時にlocalStorageからテーマが復元される', () => {
+      // 事前にダークテーマを保存
+      localStorage.setItem('foodCalculatorData', JSON.stringify({
+        foods: [],
+        dishes: [],
+        nextId: 1,
+        theme: 'dark'
+      }));
+      
+      calculator.loadData();
+      
+      expect(calculator.theme).toBe('dark');
+    });
+
+    test('localStorageにテーマ設定がない場合はlightがデフォルトとなる', () => {
+      localStorage.setItem('foodCalculatorData', JSON.stringify({
+        foods: [],
+        dishes: [],
+        nextId: 1
+        // themeプロパティなし
+      }));
+      
+      calculator.loadData();
+      
+      expect(calculator.theme).toBe('light');
+    });
+
+    test('localStorageが空の場合はlightがデフォルトとなる', () => {
+      localStorage.clear();
+      
+      calculator.loadData();
+      
+      expect(calculator.theme).toBe('light');
     });
   });
 });

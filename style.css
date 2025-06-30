@@ -24,6 +24,12 @@
     --toast-bg: #fff3cd;
     --toast-border: #ffeaa7;
     --toast-text: #856404;
+    --success-color: #27ae60;
+    --history-header-color: #7f8c8d;
+    --history-text-color: #95a5a6;
+    --history-time-color: #bdc3c7;
+    --secondary-text-color: #666666;
+    --close-hover-color: #000000;
 }
 
 [data-theme="dark"] {
@@ -45,6 +51,12 @@
     --toast-bg: #664d03;
     --toast-border: #997404;
     --toast-text: #fff3cd;
+    --success-color: #2ecc71;
+    --history-header-color: #95a5a6;
+    --history-text-color: #bdc3c7;
+    --history-time-color: #95a5a6;
+    --secondary-text-color: #b0b0b0;
+    --close-hover-color: #f0f0f0;
 }
 
 body {
@@ -237,8 +249,9 @@ body {
 .weight-display {
     font-size: 24px;
     font-weight: bold;
-    color: #27ae60;
+    color: var(--success-color);
     margin-bottom: 15px;
+    transition: color 0.3s ease;
 }
 
 .controls {
@@ -313,15 +326,24 @@ body {
 
 .calculation-row select {
     min-width: 100px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 .calculation-row input {
     width: 60px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 .calculation-result {
     font-weight: bold;
-    color: #27ae60;
+    color: var(--success-color);
+    transition: color 0.3s ease;
 }
 
 /* 計算履歴 */
@@ -336,11 +358,12 @@ body {
 
 .history-header {
     font-size: 12px;
-    color: #7f8c8d;
+    color: var(--history-header-color);
     font-weight: bold;
     margin-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    transition: color 0.3s ease;
 }
 
 .history-items {
@@ -356,17 +379,20 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 11px;
-    color: #95a5a6;
+    color: var(--history-text-color);
+    transition: color 0.3s ease;
 }
 
 .history-operation {
     font-weight: 500;
-    color: #7f8c8d;
+    color: var(--history-header-color);
+    transition: color 0.3s ease;
 }
 
 .history-time {
     font-size: 10px;
-    color: #bdc3c7;
+    color: var(--history-time-color);
+    transition: color 0.3s ease;
 }
 
 /* モーダル */
@@ -415,7 +441,8 @@ body {
 }
 
 .close:hover {
-    color: #000;
+    color: var(--close-hover-color);
+    transition: color 0.3s ease;
 }
 
 .modal-body {
@@ -459,8 +486,9 @@ body {
 }
 
 .dish-item-weight {
-    color: #666;
+    color: var(--secondary-text-color);
     font-size: 14px;
+    transition: color 0.3s ease;
 }
 
 .dish-delete-btn {

@@ -4,7 +4,8 @@ describe('ユーティリティ機能とエッジケース', () => {
   let calculator;
 
   beforeEach(() => {
-    calculator = new FoodCalculator();
+    localStorage.clear();
+    calculator = createFoodCalculator();
   });
 
   describe('クリップボード機能', () => {

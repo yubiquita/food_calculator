@@ -54,6 +54,7 @@ npm test -- --testNamePattern="基本機能"
 npm test -- --testNamePattern="自動再計算機能"
 npm test -- --testNamePattern="循環参照検出"
 npm test -- --testNamePattern="トースト通知改善機能"
+npm test -- --testNamePattern="テーマ機能"
 
 # 単一テストファイル実行
 npm test tests/foodCalculator.test.js
@@ -165,16 +166,17 @@ npm test tests/utils.test.js
 
 ### テストファイル
 - **tests/setup.js**: Jestグローバル設定、DOM・localStorage・clipboard モック、script.jsからのFoodCalculator自動インポート
-- **tests/foodCalculator.test.js**: 基本機能、重量操作、データ永続化、UI機能、レンダリング仕様テスト
+- **tests/foodCalculator.test.js**: 基本機能、重量操作、データ永続化、UI機能、レンダリング仕様、テーマ機能テスト
 - **tests/utils.test.js**: ユーティリティ機能、エッジケース、レンダリングテスト
 
 ### テスト実装時の注意点
 - **FoodCalculatorクラステスト**: `tests/setup.js`でscript.jsから自動インポートしたTestFoodCalculatorクラスを使用
 - **モック管理**: localStorage・navigator.clipboardは個別テストでモック作成
-- **データ分離**: テスト間でのデータ汚染を防ぐため独立したインスタンス作成
+- **データ分離**: テスト間でのデータ汚染を防ぐため、各テストで`localStorage.clear()`と`createFoodCalculator()`を実行
 - **DOM環境**: jest-environment-jsdomでブラウザ環境をシミュレート
 - **トースト通知テスト**: `beforeEach`で`toast-container`DOM要素の確実なセットアップが必要
 - **非同期テスト**: `jest.useFakeTimers()`でタイマー処理をモック、`jest.advanceTimersByTime()`で時間経過をシミュレート
+- **テーマ機能テスト**: `document.querySelector`のモックが必要、`document.documentElement.setAttribute`の呼び出し確認でテーマ変更を検証
 
 ## 実装ガイドライン
 
@@ -200,9 +202,13 @@ npm test tests/utils.test.js
 - スワイプ機能実装時は`hasMoved`フラグでタップとスワイプを区別し、誤動作を防止
 
 ### レイアウトとテーマ
-- テーマ機能追加時はCSS変数を使用し、既存の`:root`と`[data-theme="dark"]`セレクタを活用
-- 新しいUI要素にはテーマ対応の`var(--変数名)`と`transition`を必須で設定
-- レイアウト変更時はCSS Gridの4列構造（`80px 100px 100px 60px`）を維持
+- **CSS変数システム**: 全テーマ対応要素は`var(--変数名)`を使用、`:root`と`[data-theme="dark"]`で定義
+- **テーマ変数の分類**: 
+  - 基本色: `--bg-color`, `--card-bg`, `--text-color`, `--header-text`
+  - 成功・履歴色: `--success-color`, `--history-header-color`, `--history-text-color`
+  - 補助色: `--secondary-text-color`, `--close-hover-color`
+- **新UI要素**: テーマ対応の`var(--変数名)`と`transition: color 0.3s ease`を必須設定
+- **レイアウト維持**: CSS Gridの4列構造（`80px 100px 100px 60px`）を変更時も維持
 
 ## パフォーマンス最適化
 
