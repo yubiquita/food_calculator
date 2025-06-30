@@ -1430,6 +1430,123 @@ describe('FoodCalculator', () => {
     });
   });
 
+  describe('Undo時の自動再計算機能', () => {
+    test('参照元食品のundo時に計算食品が自動更新される', () => {
+      // 2つの食品を作成
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算食品
+      
+      const sourceFood = calculator.foods[0];
+      const calcFood = calculator.foods[1];
+      
+      // 参照元食品に初期重量を設定
+      calculator.addWeight(sourceFood.id, '100');
+      
+      // 計算食品を設定（参照元 × 0.5）
+      calculator.updateCalculation(calcFood.id, sourceFood.id, '0.5');
+      expect(calcFood.weight).toBe(50); // 100 × 0.5 = 50
+      
+      // 参照元食品に重量を追加
+      calculator.addWeight(sourceFood.id, '50'); // 100 + 50 = 150
+      expect(sourceFood.weight).toBe(150);
+      expect(calcFood.weight).toBe(75); // 150 × 0.5 = 75（自動再計算）
+      
+      // 参照元食品をundo
+      calculator.undoLastOperation(sourceFood.id);
+      expect(sourceFood.weight).toBe(100); // 元の100に戻る
+      
+      // 計算食品も自動的に再計算されることを期待
+      expect(calcFood.weight).toBe(50); // 100 × 0.5 = 50に戻ることを期待
+    });
+
+    test('複数階層依存関係でのundo時自動再計算', () => {
+      // A → B → C の3階層依存関係でテスト
+      calculator.addNewFood(); // A (基準)
+      calculator.addNewFood(); // B (A依存)
+      calculator.addNewFood(); // C (B依存)
+      
+      const foodA = calculator.foods[0];
+      const foodB = calculator.foods[1];
+      const foodC = calculator.foods[2];
+      
+      // 基準食品に重量を設定
+      calculator.addWeight(foodA.id, '100');
+      
+      // 依存関係を設定
+      calculator.updateCalculation(foodB.id, foodA.id, '0.8'); // B = 80
+      calculator.updateCalculation(foodC.id, foodB.id, '0.5'); // C = 40
+      
+      // 基準食品に重量を追加
+      calculator.addWeight(foodA.id, '50'); // A = 150
+      expect(foodA.weight).toBe(150);
+      expect(foodB.weight).toBe(120); // 150 × 0.8
+      expect(foodC.weight).toBe(60);  // 120 × 0.5
+      
+      // 基準食品をundo
+      calculator.undoLastOperation(foodA.id);
+      expect(foodA.weight).toBe(100); // 元の100に戻る
+      
+      // 全階層が自動更新されることを期待
+      expect(foodB.weight).toBe(80);  // 100 × 0.8に戻ることを期待
+      expect(foodC.weight).toBe(40);  // 80 × 0.5に戻ることを期待
+    });
+
+    test('計算食品自体のundo時は他の食品に影響しない', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算食品
+      
+      const sourceFood = calculator.foods[0];
+      const calcFood = calculator.foods[1];
+      
+      // 参照元食品に重量を設定
+      calculator.addWeight(sourceFood.id, '100');
+      
+      // 計算食品を設定
+      calculator.updateCalculation(calcFood.id, sourceFood.id, '0.6');
+      expect(calcFood.weight).toBe(60);
+      
+      // 計算食品に直接重量を追加
+      calculator.addWeight(calcFood.id, '10');
+      expect(calcFood.weight).toBe(70);
+      
+      // 計算食品をundo（計算状態に戻る）
+      calculator.undoLastOperation(calcFood.id);
+      expect(calcFood.weight).toBe(60); // 計算結果に戻る
+      expect(calcFood.calculation).toBeTruthy(); // 計算状態は維持
+      expect(sourceFood.weight).toBe(100); // 参照元は影響を受けない
+    });
+
+    test('複数の計算食品が参照元のundo時に同時更新される', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算食品1
+      calculator.addNewFood(); // 計算食品2
+      
+      const sourceFood = calculator.foods[0];
+      const calcFood1 = calculator.foods[1];
+      const calcFood2 = calculator.foods[2];
+      
+      // 参照元食品に重量を設定
+      calculator.addWeight(sourceFood.id, '120');
+      
+      // 2つの計算食品を設定
+      calculator.updateCalculation(calcFood1.id, sourceFood.id, '0.5'); // 60
+      calculator.updateCalculation(calcFood2.id, sourceFood.id, '0.3'); // 36
+      
+      // 参照元の重量を変更
+      calculator.addWeight(sourceFood.id, '80'); // 200
+      expect(calcFood1.weight).toBe(100); // 200 × 0.5
+      expect(calcFood2.weight).toBe(60);  // 200 × 0.3
+      
+      // 参照元をundo
+      calculator.undoLastOperation(sourceFood.id);
+      expect(sourceFood.weight).toBe(120);
+      
+      // 両方の計算食品が自動更新されることを期待
+      expect(calcFood1.weight).toBe(60);  // 120 × 0.5に戻ることを期待
+      expect(calcFood2.weight).toBe(36);  // 120 × 0.3に戻ることを期待
+    });
+  });
+
   describe('トースト通知改善機能', () => {
     beforeEach(() => {
       // 確実にクリーンアップしてから新しく作成

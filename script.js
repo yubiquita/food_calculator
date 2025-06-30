@@ -99,6 +99,9 @@ class FoodCalculator {
             food.calculation = null;
         }
 
+        // 依存食品の自動再計算
+        this.recalculateDependent(id);
+        
         this.saveData();
         this.render();
     }
