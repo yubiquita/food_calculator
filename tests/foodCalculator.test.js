@@ -1046,5 +1046,119 @@ describe('FoodCalculator', () => {
       expect(global.navigator.clipboard.writeText).toHaveBeenCalledWith('123');
     });
   });
+
+  describe('食器プルダウン自動実行機能', () => {
+    test('食器プルダウン選択時に自動で重量減算が実行される', () => {
+      // 食器プリセットを追加
+      calculator.dishes = [
+        { name: 'テスト皿', weight: 100 },
+        { name: 'ボウル', weight: 200 }
+      ];
+      
+      // 料理を追加して重量を設定
+      calculator.addNewFood();
+      calculator.foods[0].weight = 500;
+      const foodId = calculator.foods[0].id;
+      
+      // DOM要素をモック（入力欄とプルダウン）
+      const mockInput = { value: '' };
+      const mockSelect = { value: '' };
+      document.getElementById = jest.fn((id) => {
+        if (id === `dish-weight-${foodId}`) return mockInput;
+        if (id === `dish-select-${foodId}`) return mockSelect;
+        return null;
+      });
+      
+      // _handleCardChangeで使用するイベント模擬
+      const mockEvent = {
+        target: {
+          classList: { contains: (className) => className === 'dish-select' },
+          value: '100', // テスト皿の重量
+          dataset: { foodId: foodId.toString() },
+          closest: () => ({ dataset: { foodId: foodId.toString() } })
+        }
+      };
+      
+      // 状態履歴の初期化確認
+      expect(calculator.foods[0].stateHistory).toEqual([]);
+      
+      // プルダウン選択をシミュレート
+      calculator._handleCardChange(mockEvent);
+      
+      // 自動で重量減算が実行されることを確認
+      expect(calculator.foods[0].weight).toBe(400); // 500 - 100
+      
+      // 履歴に記録されることを確認
+      expect(calculator.foods[0].history).toHaveLength(1);
+      expect(calculator.foods[0].history[0].type).toBe('subtract');
+      expect(calculator.foods[0].history[0].value).toBe(100);
+      
+      // 状態履歴が保存されることを確認
+      expect(calculator.foods[0].stateHistory).toHaveLength(1);
+      expect(calculator.foods[0].stateHistory[0].weight).toBe(500);
+      
+      // 入力欄とプルダウンがクリアされることを確認
+      expect(mockInput.value).toBe('');
+      expect(mockSelect.value).toBe('');
+    });
+
+    test('空の食器選択では何も実行されない', () => {
+      calculator.addNewFood();
+      calculator.foods[0].weight = 500;
+      const foodId = calculator.foods[0].id;
+      
+      const mockInput = { value: '' };
+      const mockSelect = { value: '' };
+      document.getElementById = jest.fn((id) => {
+        if (id === `dish-weight-${foodId}`) return mockInput;
+        if (id === `dish-select-${foodId}`) return mockSelect;
+        return null;
+      });
+      
+      const mockEvent = {
+        target: {
+          classList: { contains: (className) => className === 'dish-select' },
+          value: '', // 空選択
+          dataset: { foodId: foodId.toString() },
+          closest: () => ({ dataset: { foodId: foodId.toString() } })
+        }
+      };
+      
+      calculator._handleCardChange(mockEvent);
+      
+      // 重量が変更されないことを確認
+      expect(calculator.foods[0].weight).toBe(500);
+      expect(calculator.foods[0].history).toHaveLength(0);
+    });
+
+    test('無効な食器重量値では何も実行されない', () => {
+      calculator.addNewFood();
+      calculator.foods[0].weight = 500;
+      const foodId = calculator.foods[0].id;
+      
+      const mockInput = { value: '' };
+      const mockSelect = { value: '' };
+      document.getElementById = jest.fn((id) => {
+        if (id === `dish-weight-${foodId}`) return mockInput;
+        if (id === `dish-select-${foodId}`) return mockSelect;
+        return null;
+      });
+      
+      const mockEvent = {
+        target: {
+          classList: { contains: (className) => className === 'dish-select' },
+          value: 'invalid', // 無効な値
+          dataset: { foodId: foodId.toString() },
+          closest: () => ({ dataset: { foodId: foodId.toString() } })
+        }
+      };
+      
+      calculator._handleCardChange(mockEvent);
+      
+      // 重量が変更されないことを確認
+      expect(calculator.foods[0].weight).toBe(500);
+      expect(calculator.foods[0].history).toHaveLength(0);
+    });
+  });
 });
 

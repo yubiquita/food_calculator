@@ -316,7 +316,18 @@ class FoodCalculator {
             this.updateFoodName(foodId, target.value);
         } else if (target.classList.contains('dish-select')) {
             const dishWeightInput = document.getElementById(`dish-weight-${foodId}`);
+            const dishSelect = document.getElementById(`dish-select-${foodId}`);
+            
+            // 入力欄に値を設定
             dishWeightInput.value = target.value;
+            
+            // 値が選択されている場合は自動で重量減算を実行
+            if (target.value && target.value !== '') {
+                this.subtractWeight(foodId, target.value);
+                // 実行後に入力欄とプルダウンをクリア
+                dishWeightInput.value = '';
+                dishSelect.value = '';
+            }
         }
     }
 
