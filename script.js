@@ -5,6 +5,7 @@ class FoodCalculator {
         this.nextId = 1;
         this.theme = 'light';
         this.swipeThreshold = 80; // スワイプでundoを実行する閾値（px）
+        this.currentToast = null; // 現在表示中の通知要素
         this.init();
     }
 
@@ -61,6 +62,22 @@ class FoodCalculator {
     restoreFromSnapshot(food, snapshot) {
         food.weight = snapshot.weight;
         food.calculation = snapshot.calculation ? { ...snapshot.calculation } : null;
+    }
+
+    // 履歴エントリ作成のヘルパーメソッド
+    createHistoryEntry(type, value, additionalData = {}) {
+        return {
+            type,
+            value,
+            timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+            ...additionalData
+        };
+    }
+
+    // 履歴に操作を追加するヘルパーメソッド
+    addToHistory(food, historyEntry) {
+        if (!food.history) food.history = [];
+        food.history.push(historyEntry);
     }
 
     undoLastOperation(id) {
@@ -130,12 +147,11 @@ class FoodCalculator {
                 food.stateHistory.push(this.createStateSnapshot(food));
                 
                 food.weight += weightValue;
-                if (!food.history) food.history = [];
-                food.history.push({
-                    type: 'add',
-                    value: weightValue,
-                    timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-                });
+                this.addToHistory(food, this.createHistoryEntry('add', weightValue));
+                
+                // 依存食品の自動再計算
+                this.recalculateDependent(id);
+                
                 this.saveData();
                 this.render();
             }
@@ -152,12 +168,11 @@ class FoodCalculator {
                 food.stateHistory.push(this.createStateSnapshot(food));
                 
                 food.weight -= weightValue;
-                if (!food.history) food.history = [];
-                food.history.push({
-                    type: 'subtract',
-                    value: weightValue,
-                    timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-                });
+                this.addToHistory(food, this.createHistoryEntry('subtract', weightValue));
+                
+                // 依存食品の自動再計算
+                this.recalculateDependent(id);
+                
                 this.saveData();
                 this.render();
             }
@@ -169,6 +184,12 @@ class FoodCalculator {
         const sourceFood = this.foods.find(f => f.id === parseInt(sourceId));
         
         if (food && sourceFood) {
+            // 循環参照をチェック
+            if (this.detectCircularReference(parseInt(sourceId), id)) {
+                this.showToast('循環参照のため計算できません', 'warning');
+                return;
+            }
+            
             // 操作前の状態を保存
             if (!food.stateHistory) food.stateHistory = [];
             food.stateHistory.push(this.createStateSnapshot(food));
@@ -182,18 +203,80 @@ class FoodCalculator {
             };
             food.weight = calculatedWeight;
             
-            if (!food.history) food.history = [];
-            food.history.push({
-                type: 'calculation',
-                value: calculatedWeight,
+            this.addToHistory(food, this.createHistoryEntry('calculation', calculatedWeight, {
                 sourceName: sourceFood.name,
-                multiplier: multiplierValue,
-                timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-            });
+                multiplier: multiplierValue
+            }));
             
             this.saveData();
             this.render();
         }
+    }
+
+    detectCircularReference(sourceId, targetId) {
+        // 自己参照チェック
+        if (sourceId === targetId) {
+            return true;
+        }
+        
+        // 深度優先探索で循環参照をチェック
+        const visited = new Set();
+        const stack = [sourceId];
+        
+        while (stack.length > 0) {
+            const currentId = stack.pop();
+            
+            if (visited.has(currentId)) {
+                continue;
+            }
+            
+            if (currentId === targetId) {
+                return true;
+            }
+            
+            visited.add(currentId);
+            
+            // 現在の食品が参照している食品を探す
+            const currentFood = this.foods.find(f => f.id === currentId);
+            if (currentFood && currentFood.calculation) {
+                stack.push(currentFood.calculation.sourceId);
+            }
+        }
+        
+        return false;
+    }
+
+    recalculateDependent(changedFoodId) {
+        // 変更された食品を参照している食品を探す
+        const dependentFoods = this.foods.filter(food => 
+            food.calculation && food.calculation.sourceId === changedFoodId
+        );
+        
+        // 各依存食品を再計算
+        dependentFoods.forEach(food => {
+            const sourceFood = this.foods.find(f => f.id === food.calculation.sourceId);
+            if (sourceFood) {
+                const newWeight = Math.round(sourceFood.weight * food.calculation.multiplier);
+                
+                // 重量が変わった場合のみ更新
+                if (food.weight !== newWeight) {
+                    // 操作前の状態を保存
+                    if (!food.stateHistory) food.stateHistory = [];
+                    food.stateHistory.push(this.createStateSnapshot(food));
+                    
+                    food.weight = newWeight;
+                    
+                    // 履歴に自動再計算を記録
+                    this.addToHistory(food, this.createHistoryEntry('auto_recalculation', newWeight, {
+                        sourceName: sourceFood.name,
+                        multiplier: food.calculation.multiplier
+                    }));
+                    
+                    // 再帰的に依存関係を更新
+                    this.recalculateDependent(food.id);
+                }
+            }
+        });
     }
 
     addDish(e) {
@@ -535,6 +618,9 @@ class FoodCalculator {
                 case 'calculation':
                     text = `=${Math.round(item.value)}g (${item.sourceName} × ${item.multiplier})`;
                     break;
+                case 'auto_recalculation':
+                    text = `🔄${Math.round(item.value)}g (${item.sourceName} × ${item.multiplier})`;
+                    break;
             }
             return `<div class="history-item">
                         <span class="history-operation">${text}</span>
@@ -617,6 +703,68 @@ class FoodCalculator {
                 // エラーは無視（ユーザーにはAndroid側の通知が表示される）
             }
         }
+    }
+
+    removeToastImmediately(toast) {
+        if (!toast || !toast.parentNode) return;
+        
+        // タイマーをクリア（既存のタイマーがある場合）
+        if (toast.autoHideTimer) {
+            clearTimeout(toast.autoHideTimer);
+        }
+        if (toast.removeTimer) {
+            clearTimeout(toast.removeTimer);
+        }
+        
+        // DOM から即座に削除
+        toast.parentNode.removeChild(toast);
+        
+        // 現在の通知が削除された場合はプロパティをクリア
+        if (this.currentToast === toast) {
+            this.currentToast = null;
+        }
+    }
+
+    showToast(message, type = 'warning') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        // 既存の通知があれば即座に削除
+        if (this.currentToast) {
+            this.removeToastImmediately(this.currentToast);
+        }
+
+        // トースト要素を作成
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.textContent = message;
+
+        // 現在の通知として設定
+        this.currentToast = toast;
+
+        // コンテナに追加
+        container.appendChild(toast);
+
+        // アニメーション: フェードイン
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+
+        // 3秒後に自動削除
+        toast.autoHideTimer = setTimeout(() => {
+            toast.classList.remove('show');
+            toast.classList.add('hide');
+            
+            // アニメーション終了後にDOM から削除
+            toast.removeTimer = setTimeout(() => {
+                if (toast.parentNode) {
+                    container.removeChild(toast);
+                    if (this.currentToast === toast) {
+                        this.currentToast = null;
+                    }
+                }
+            }, 400); // CSSアニメーション時間に合わせて調整
+        }, 3000);
     }
 }
 

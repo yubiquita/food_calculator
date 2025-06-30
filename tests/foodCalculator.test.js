@@ -1184,5 +1184,495 @@ describe('FoodCalculator', () => {
       expect(calculator.foods[0].history).toHaveLength(0);
     });
   });
+
+  describe('自動再計算機能', () => {
+    test('参照元食品の重量変更時に計算食品が自動更新される', () => {
+      // 2つの食品を作成
+      calculator.addNewFood(); // 料理1 (参照元)
+      calculator.addNewFood(); // 料理2 (計算食品)
+      
+      const sourceFood = calculator.foods[0];
+      const calcFood = calculator.foods[1];
+      
+      // 参照元食品に重量を設定
+      calculator.addWeight(sourceFood.id, '100');
+      
+      // 計算食品を設定（参照元 × 0.6）
+      calculator.updateCalculation(calcFood.id, sourceFood.id, '0.6');
+      expect(calcFood.weight).toBe(60); // 100 × 0.6 = 60
+      
+      // 参照元食品の重量を変更
+      calculator.addWeight(sourceFood.id, '50'); // 100 + 50 = 150
+      
+      // 計算食品が自動更新されることを確認
+      expect(calcFood.weight).toBe(90); // 150 × 0.6 = 90
+      
+      // 計算食品の履歴に自動再計算が記録されることを確認
+      expect(calcFood.history).toHaveLength(2);
+      expect(calcFood.history[1].type).toBe('auto_recalculation');
+      expect(calcFood.history[1].value).toBe(90);
+    });
+
+    test('参照元食品の重量減算時も計算食品が自動更新される', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算食品
+      
+      const sourceFood = calculator.foods[0];
+      const calcFood = calculator.foods[1];
+      
+      // 参照元食品に重量を設定
+      calculator.addWeight(sourceFood.id, '200');
+      
+      // 計算食品を設定（参照元 × 0.5）
+      calculator.updateCalculation(calcFood.id, sourceFood.id, '0.5');
+      expect(calcFood.weight).toBe(100); // 200 × 0.5 = 100
+      
+      // 参照元食品の重量を減算
+      calculator.subtractWeight(sourceFood.id, '50'); // 200 - 50 = 150
+      
+      // 計算食品が自動更新されることを確認
+      expect(calcFood.weight).toBe(75); // 150 × 0.5 = 75
+    });
+
+    test('計算結果のない食品は自動再計算されない', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 通常の食品
+      
+      const sourceFood = calculator.foods[0];
+      const normalFood = calculator.foods[1];
+      
+      // 通常の食品に重量を設定
+      calculator.addWeight(normalFood.id, '100');
+      
+      // 参照元食品の重量を変更
+      calculator.addWeight(sourceFood.id, '50');
+      
+      // 通常の食品の重量は変更されないことを確認
+      expect(normalFood.weight).toBe(100);
+    });
+
+    test('複数の計算食品が同時に自動更新される', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算食品1
+      calculator.addNewFood(); // 計算食品2
+      
+      const sourceFood = calculator.foods[0];
+      const calcFood1 = calculator.foods[1];
+      const calcFood2 = calculator.foods[2];
+      
+      // 参照元食品に重量を設定
+      calculator.addWeight(sourceFood.id, '120');
+      
+      // 2つの計算食品を設定
+      calculator.updateCalculation(calcFood1.id, sourceFood.id, '0.5'); // 60
+      calculator.updateCalculation(calcFood2.id, sourceFood.id, '0.3'); // 36
+      
+      // 参照元食品の重量を変更
+      calculator.addWeight(sourceFood.id, '80'); // 120 + 80 = 200
+      
+      // 両方の計算食品が自動更新されることを確認
+      expect(calcFood1.weight).toBe(100); // 200 × 0.5 = 100
+      expect(calcFood2.weight).toBe(60);  // 200 × 0.3 = 60
+    });
+  });
+
+  describe('循環参照検出', () => {
+    test('直接的な循環参照を検出する', () => {
+      // A → B → A のような循環参照
+      calculator.addNewFood(); // A
+      calculator.addNewFood(); // B
+      
+      const foodA = calculator.foods[0];
+      const foodB = calculator.foods[1];
+      
+      // showToastメソッドをモック
+      calculator.showToast = jest.fn();
+      
+      // A → B を設定
+      calculator.updateCalculation(foodB.id, foodA.id, '0.5');
+      
+      // B → A を設定しようとすると循環参照を検出
+      calculator.updateCalculation(foodA.id, foodB.id, '0.5');
+      
+      // 通知が表示され、計算は設定されない
+      expect(calculator.showToast).toHaveBeenCalledWith('循環参照のため計算できません', 'warning');
+      expect(foodA.calculation).toBeNull();
+    });
+
+    test('間接的な循環参照を検出する', () => {
+      // A → B → C → A のような循環参照
+      calculator.addNewFood(); // A
+      calculator.addNewFood(); // B  
+      calculator.addNewFood(); // C
+      
+      const foodA = calculator.foods[0];
+      const foodB = calculator.foods[1];
+      const foodC = calculator.foods[2];
+      
+      // showToastメソッドをモック
+      calculator.showToast = jest.fn();
+      
+      // A → B → C を設定
+      calculator.updateCalculation(foodB.id, foodA.id, '0.5');
+      calculator.updateCalculation(foodC.id, foodB.id, '0.5');
+      
+      // C → A を設定しようとすると循環参照を検出
+      calculator.updateCalculation(foodA.id, foodC.id, '0.5');
+      
+      // 通知が表示され、計算は設定されない
+      expect(calculator.showToast).toHaveBeenCalledWith('循環参照のため計算できません', 'warning');
+      expect(foodA.calculation).toBeNull();
+    });
+
+    test('自己参照を検出する', () => {
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // showToastメソッドをモック
+      calculator.showToast = jest.fn();
+      
+      // 自分自身を参照しようとすると循環参照を検出
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      
+      // 通知が表示され、計算は設定されない
+      expect(calculator.showToast).toHaveBeenCalledWith('循環参照のため計算できません', 'warning');
+      expect(food.calculation).toBeNull();
+    });
+
+    test('循環参照でない場合は正常に動作する', () => {
+      // A → B, C → D のような非循環参照
+      calculator.addNewFood(); // A
+      calculator.addNewFood(); // B
+      calculator.addNewFood(); // C
+      calculator.addNewFood(); // D
+      
+      const foodA = calculator.foods[0];
+      const foodB = calculator.foods[1];
+      const foodC = calculator.foods[2];
+      const foodD = calculator.foods[3];
+      
+      // showToastメソッドをモック
+      calculator.showToast = jest.fn();
+      
+      calculator.addWeight(foodA.id, '100');
+      calculator.addWeight(foodC.id, '200');
+      
+      // A → B, C → D を設定（循環参照ではない）
+      calculator.updateCalculation(foodB.id, foodA.id, '0.5');
+      calculator.updateCalculation(foodD.id, foodC.id, '0.3');
+      
+      // 通知は表示されず、計算は正常に実行される
+      expect(calculator.showToast).not.toHaveBeenCalled();
+      expect(foodB.weight).toBe(50);  // 100 × 0.5
+      expect(foodD.weight).toBe(60);  // 200 × 0.3
+    });
+  });
+
+  describe('複数階層依存関係', () => {
+    test('3階層の依存関係が正しく更新される', () => {
+      // A → B → C の3階層依存関係
+      calculator.addNewFood(); // A (基準)
+      calculator.addNewFood(); // B (A依存)
+      calculator.addNewFood(); // C (B依存)
+      
+      const foodA = calculator.foods[0];
+      const foodB = calculator.foods[1];
+      const foodC = calculator.foods[2];
+      
+      // 基準食品に重量を設定
+      calculator.addWeight(foodA.id, '100');
+      
+      // 依存関係を設定
+      calculator.updateCalculation(foodB.id, foodA.id, '0.8'); // B = A × 0.8 = 80
+      calculator.updateCalculation(foodC.id, foodB.id, '0.5'); // C = B × 0.5 = 40
+      
+      // 基準食品の重量を変更
+      calculator.addWeight(foodA.id, '50'); // A = 150
+      
+      // 全階層が自動更新されることを確認
+      expect(foodA.weight).toBe(150); // 100 + 50
+      expect(foodB.weight).toBe(120); // 150 × 0.8
+      expect(foodC.weight).toBe(60);  // 120 × 0.5
+      
+      // 履歴にも記録されることを確認
+      expect(foodB.history).toHaveLength(2); // 初回計算 + 自動再計算
+      expect(foodC.history).toHaveLength(2); // 初回計算 + 自動再計算
+    });
+
+    test('複雑な依存関係ネットワークが正しく更新される', () => {
+      // A → B, A → C, B → D の複雑な依存関係
+      calculator.addNewFood(); // A (基準)
+      calculator.addNewFood(); // B (A依存)
+      calculator.addNewFood(); // C (A依存)
+      calculator.addNewFood(); // D (B依存)
+      
+      const foodA = calculator.foods[0];
+      const foodB = calculator.foods[1];
+      const foodC = calculator.foods[2];
+      const foodD = calculator.foods[3];
+      
+      // 基準食品に重量を設定
+      calculator.addWeight(foodA.id, '200');
+      
+      // 依存関係を設定
+      calculator.updateCalculation(foodB.id, foodA.id, '0.6'); // B = 120
+      calculator.updateCalculation(foodC.id, foodA.id, '0.4'); // C = 80
+      calculator.updateCalculation(foodD.id, foodB.id, '0.5'); // D = 60
+      
+      // 基準食品の重量を変更
+      calculator.addWeight(foodA.id, '100'); // A = 300
+      
+      // 全依存食品が自動更新されることを確認
+      expect(foodA.weight).toBe(300); // 200 + 100
+      expect(foodB.weight).toBe(180); // 300 × 0.6
+      expect(foodC.weight).toBe(120); // 300 × 0.4
+      expect(foodD.weight).toBe(90);  // 180 × 0.5
+    });
+  });
+
+  describe('トースト通知改善機能', () => {
+    beforeEach(() => {
+      // 確実にクリーンアップしてから新しく作成
+      document.querySelectorAll('#toast-container').forEach(el => el.remove());
+      
+      // DOM要素をセットアップ
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+      
+      // currentToastもリセット
+      calculator.currentToast = null;
+    });
+
+    afterEach(() => {
+      // DOM要素とプロパティをクリーンアップ
+      document.querySelectorAll('#toast-container').forEach(el => el.remove());
+      calculator.currentToast = null;
+    });
+
+    test('showToastメソッドが循環参照時に呼び出される', () => {
+      // showToastメソッドをスパイ
+      const showToastSpy = jest.spyOn(calculator, 'showToast');
+      
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 循環参照を発生させる
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      
+      // showToastが呼び出されたことを確認
+      expect(showToastSpy).toHaveBeenCalledWith('循環参照のため計算できません', 'warning');
+      
+      showToastSpy.mockRestore();
+    });
+
+    test('DOM要素が正しくセットアップされている', () => {
+      const container = document.getElementById('toast-container');
+      expect(container).toBeTruthy();
+      expect(container.className).toBe('toast-container');
+      expect(container.children.length).toBe(0);
+    });
+
+    test('showToastメソッドを直接呼び出してテスト', () => {
+      const container = document.getElementById('toast-container');
+      expect(container).toBeTruthy();
+      expect(calculator.currentToast).toBeNull();
+      
+      // showToastを直接呼び出し
+      calculator.showToast('テストメッセージ', 'warning');
+      
+      // 通知が作成されることを確認
+      expect(calculator.currentToast).toBeTruthy();
+      expect(calculator.currentToast.textContent).toBe('テストメッセージ');
+      expect(container.children.length).toBe(1);
+    });
+
+    test('循環参照検出処理の詳細確認', () => {
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 循環参照検出をテスト
+      const isCircular = calculator.detectCircularReference(food.id, food.id);
+      expect(isCircular).toBe(true);
+      
+      // updateCalculationでの流れを確認
+      const sourceFood = calculator.foods.find(f => f.id === food.id);
+      expect(sourceFood).toBeTruthy();
+      
+      // showToastをスパイして実際の呼び出しを確認
+      const showToastSpy = jest.spyOn(calculator, 'showToast');
+      
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      
+      expect(showToastSpy).toHaveBeenCalledWith('循環参照のため計算できません', 'warning');
+      expect(calculator.currentToast).toBeTruthy();
+      
+      showToastSpy.mockRestore();
+    });
+
+    test('単一通知管理：同じメッセージの通知が連続表示される場合、前の通知が即座に削除される', () => {
+      calculator.addNewFood(); // A
+      calculator.addNewFood(); // B
+      
+      const foodA = calculator.foods[0];
+      const foodB = calculator.foods[1];
+      
+      // A → B を設定
+      calculator.updateCalculation(foodB.id, foodA.id, '0.5');
+      
+      // 最初の循環参照で通知表示
+      calculator.updateCalculation(foodA.id, foodB.id, '0.5');
+      expect(calculator.currentToast).toBeTruthy();
+      const firstToast = calculator.currentToast;
+      
+      // 2回目の循環参照（同じメッセージ）
+      calculator.updateCalculation(foodA.id, foodB.id, '0.5');
+      
+      // 前の通知が削除され、新しい通知が表示される
+      expect(firstToast.parentNode).toBeNull(); // DOM から削除済み
+      expect(calculator.currentToast).toBeTruthy();
+      expect(calculator.currentToast).not.toBe(firstToast);
+    });
+
+    test('currentToastプロパティが正しく管理される', () => {
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 初期状態
+      expect(calculator.currentToast).toBeNull();
+      
+      // 通知表示
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      expect(calculator.currentToast).toBeTruthy();
+      expect(calculator.currentToast.textContent).toBe('循環参照のため計算できません');
+      
+      // 同じメッセージで再度実行
+      const firstToast = calculator.currentToast;
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      
+      // 新しい通知に置き換わる
+      expect(calculator.currentToast).toBeTruthy();
+      expect(calculator.currentToast).not.toBe(firstToast);
+    });
+
+    test('通知要素が正しいCSSクラスとメッセージを持つ', () => {
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 循環参照を発生させる
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      
+      const toast = calculator.currentToast;
+      expect(toast).toBeTruthy();
+      expect(toast.classList.contains('toast-notification')).toBe(true);
+      expect(toast.classList.contains('warning')).toBe(true);
+      expect(toast.textContent).toBe('循環参照のため計算できません');
+    });
+
+    test('通知がトーストコンテナに正しく追加される', () => {
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      const container = document.getElementById('toast-container');
+      expect(container.children.length).toBe(0);
+      
+      // 通知を表示
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      
+      expect(container.children.length).toBe(1);
+      expect(container.children[0]).toBe(calculator.currentToast);
+    });
+
+    test('removeToastImmediatelyメソッドが正しく動作する', () => {
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 通知を表示
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      const toast = calculator.currentToast;
+      const container = document.getElementById('toast-container');
+      
+      expect(toast.parentNode).toBe(container);
+      expect(calculator.currentToast).toBe(toast);
+      
+      // 即座に削除
+      calculator.removeToastImmediately(toast);
+      
+      expect(toast.parentNode).toBeNull();
+      expect(calculator.currentToast).toBeNull();
+    });
+
+    test('通知にshowクラスが適用される（アニメーション改善）', () => {
+      jest.useFakeTimers();
+      
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 通知を表示
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      const toast = calculator.currentToast;
+      
+      // 通知が作成されていることを確認
+      expect(toast).toBeTruthy();
+      
+      // 初期状態ではshowクラスがない
+      expect(toast.classList.contains('show')).toBe(false);
+      
+      // 10ms経過をシミュレート
+      jest.advanceTimersByTime(10);
+      
+      // showクラスが追加されることを確認
+      expect(toast.classList.contains('show')).toBe(true);
+      
+      jest.useRealTimers();
+    });
+
+    test('3秒後に通知が自動削除される', () => {
+      jest.useFakeTimers();
+      
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 通知を表示
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      const toast = calculator.currentToast;
+      
+      expect(toast).toBeTruthy();
+      expect(calculator.currentToast).toBe(toast);
+      
+      // 3秒経過をシミュレート
+      jest.advanceTimersByTime(3000);
+      
+      // hideクラスが追加される
+      expect(toast.classList.contains('hide')).toBe(true);
+      expect(toast.classList.contains('show')).toBe(false);
+      
+      // アニメーション完了後にDOM から削除される
+      jest.advanceTimersByTime(400); // アニメーション時間
+      
+      // 最終的にcurrentToastがクリアされることを確認
+      expect(calculator.currentToast).toBeNull();
+      expect(toast.parentNode).toBeNull();
+      
+      jest.useRealTimers();
+    });
+
+    test('通知の初期スタイルが正しく設定される（フェード+縦移動）', () => {
+      calculator.addNewFood();
+      const food = calculator.foods[0];
+      
+      // 通知を表示
+      calculator.updateCalculation(food.id, food.id, '0.5');
+      const toast = calculator.currentToast;
+      
+      // CSSクラスの確認
+      expect(toast.classList.contains('toast-notification')).toBe(true);
+      expect(toast.classList.contains('warning')).toBe(true);
+      
+      // 初期状態では show クラスがない（アニメーション前）
+      expect(toast.classList.contains('show')).toBe(false);
+    });
+  });
 });
 

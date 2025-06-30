@@ -47,6 +47,9 @@ npm run test:coverage
 # 特定のテストグループ実行
 npm test -- --testNamePattern="Gmail風スワイプUndo機能"
 npm test -- --testNamePattern="基本機能"
+npm test -- --testNamePattern="自動再計算機能"
+npm test -- --testNamePattern="循環参照検出"
+npm test -- --testNamePattern="トースト通知改善機能"
 
 # 単一テストファイル実行
 npm test tests/foodCalculator.test.js
@@ -67,7 +70,7 @@ npm test tests/utils.test.js
     } | null,
     history: [            // 操作履歴（全件保存、スクロール表示）
         {
-            type: 'add'|'subtract'|'calculation',
+            type: 'add'|'subtract'|'calculation'|'auto_recalculation',
             value: number,
             timestamp: string,
             sourceName?: string,    // 計算時のみ
@@ -98,6 +101,7 @@ npm test tests/utils.test.js
 - **減算**: 食器重量の減算（手動入力またはプリセット選択）
 - **食器プルダウン自動実行**: 食器選択時に即座に重量減算を実行（Issue #6実装）
 - **計算**: 他の食品からの乗算による重量導出（結果は`Math.round()`で整数化）
+- **自動再計算**: 参照元食品の重量変更時に依存する計算食品を自動更新（Issue #2実装）
 - **Gmail風スワイプUndo**: 左スワイプ（80px閾値）で最後の操作を取り消し
 - **クリップボードコピー**: 重量表示をタップして数値のみをコピー
 
@@ -107,6 +111,7 @@ npm test tests/utils.test.js
 - **数値入力**: Enterキーで即座に実行、入力欄自動クリア
 - **操作履歴**: 全操作履歴をスクロール表示（60px固定高でoverflow-y: auto）
 - **テーマ切り替え**: ライト・ダークテーマの切り替え機能（localStorage永続化）
+- **トースト通知**: 循環参照検出時の控えめな警告表示（フェード+縦移動アニメーション）
 
 ### データフロー
 1. すべてのユーザーアクションがデータモデルを即座に更新
@@ -134,10 +139,22 @@ npm test tests/utils.test.js
 - **要素の縦整列**: 入力欄とボタンが各行で縦に揃うよう設計
 - **近接の原則**: 関連操作（重量・食器重量）を`gap: 5px`でグループ化
 
+### 自動再計算システム
+- **依存関係追跡**: `recalculateDependent(changedFoodId)`で変更された食品を参照している食品を検出
+- **再帰的更新**: 多階層の依存関係（A→B→C）も自動で連鎖更新
+- **循環参照検出**: `detectCircularReference(sourceId, targetId)`で深度優先探索による循環参照防止
+- **履歴管理**: 自動再計算は`auto_recalculation`タイプとして履歴に記録（🔄アイコンで表示）
+
 ### テーマシステム
 - CSS変数（カスタムプロパティ）を使用したテーマ切り替え
 - `data-theme`属性でライト/ダーク状態を管理
 - localStorageで設定永続化、アプリ起動時に自動復元
+
+### トースト通知システム
+- **単一通知管理**: `currentToast`プロパティで同時表示を1個に制限
+- **控えめなアニメーション**: フェードイン + 軽微な縦移動（-10px → 0px）
+- **自動削除**: 3秒後にフェードアウトして自動削除
+- **テーマ対応**: ライト・ダークテーマで適切な色彩変更
 
 ## テスト構造
 
@@ -151,6 +168,8 @@ npm test tests/utils.test.js
 - **モック管理**: localStorage・navigator.clipboardは個別テストでモック作成
 - **データ分離**: テスト間でのデータ汚染を防ぐため独立したインスタンス作成
 - **DOM環境**: jest-environment-jsdomでブラウザ環境をシミュレート
+- **トースト通知テスト**: `beforeEach`で`toast-container`DOM要素の確実なセットアップが必要
+- **非同期テスト**: `jest.useFakeTimers()`でタイマー処理をモック、`jest.advanceTimersByTime()`で時間経過をシミュレート
 
 ## 実装ガイドライン
 
@@ -159,6 +178,8 @@ npm test tests/utils.test.js
 - **エラーハンドリング**: サイレントフェール設計（クリップボード、localStorage等）
 - **DOM安全性**: 要素存在確認後の操作、`getElementById`のnullチェック必須
 - **データ永続性**: 操作後の`saveData()`呼び出し、`render()`での画面同期
+- **循環参照防止**: 計算設定前に`detectCircularReference()`による検証必須
+- **通知表示**: エラー時は`showToast()`による控えめな警告表示を採用
 
 ### UI/UX実装規則
 - 新機能追加時は`render()`内でイベントリスナーを忘れずに設定
