@@ -222,3 +222,23 @@ npm test tests/utils.test.js
 - **Jest依存関係**: 開発時は`npm install`でJest環境をセットアップ
 - **TDD開発**: 新機能実装時はRED→GREEN→REFACTORサイクルを厳守
 - **テスト成功率**: 全100テストの継続実行を維持（回帰テスト）
+
+## GitHub CLI使用時の注意事項
+
+### Issue操作でのコメント投稿
+`gh issue close`でマルチライン・Markdownコメントを投稿する際は、HEREDOC形式を使用：
+
+```bash
+# エラーが出る方法（Bashの文字列解析問題）
+gh issue close 6 --comment "**実装内容:**
+- 機能追加完了"
+
+# 推奨方法（HEREDOC使用）
+gh issue close 6 --comment "$(cat <<'EOF'
+実装内容: 機能追加完了
+詳細: プルダウン選択時に即座に重量減算を実行
+EOF
+)"
+```
+
+**注意**: エラーメッセージが出てもIssueクローズ自体は成功している場合が多い。`gh issue view <number>`で状態確認を推奨。
