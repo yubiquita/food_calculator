@@ -103,13 +103,13 @@ describe('ユーティリティ機能とエッジケース', () => {
     test('計算履歴が正しく表示される', () => {
       const food = {
         history: [
-          { type: 'calculation', value: 125.7, multiplier: 0.6, timestamp: '18:45' }
+          { type: 'calculation', value: 125.7, multiplier: 0.6, sourceName: '料理1', timestamp: '18:45' }
         ]
       };
       
       const historyHtml = calculator.renderHistory(food);
       
-      expect(historyHtml).toContain('=126g (×0.6)'); // Math.round(125.7) = 126
+      expect(historyHtml).toContain('=126g (料理1 × 0.6)'); // Math.round(125.7) = 126
       expect(historyHtml).toContain('18:45');
     });
   });

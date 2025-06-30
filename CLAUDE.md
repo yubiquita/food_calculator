@@ -221,7 +221,20 @@ npm test tests/utils.test.js
 - **CommonJS対応**: `script.js`は条件付きで`module.exports`を提供、ブラウザ環境では通常通り動作
 - **Jest依存関係**: 開発時は`npm install`でJest環境をセットアップ
 - **TDD開発**: 新機能実装時はRED→GREEN→REFACTORサイクルを厳守
-- **テスト成功率**: 全100テストの継続実行を維持（回帰テスト）
+- **統合テスト**: 単体テストに加えて実際のユーザーフロー（登録→操作→表示）をテストして環境差異を検出
+
+## トラブルシューティング
+
+### ブラウザキャッシュ問題
+JavaScriptの変更が反映されない場合、ブラウザのキャッシュが原因の可能性。開発時は強制再読み込み（Ctrl+F5）またはキャッシュクリアを実行。
+
+### モバイルデバッグ
+AndroidでConsole確認が必要な場合、erudaを一時的に追加：
+```html
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
+```
+問題解決後は必ず削除すること。
 
 ## GitHub CLI使用時の注意事項
 

@@ -307,6 +307,30 @@ describe('FoodCalculator', () => {
       expect(calculator.foods[0].weight).toBe(200);
       expect(calculator.foods[1].weight).toBe(0);
     });
+
+    test('完全なユーザーフローでの計算履歴表示', () => {
+      // 新しい計算機インスタンスで実際のユーザーフローをテスト
+      const userFlowCalculator = new FoodCalculator();
+      
+      // 1. 食事を登録
+      userFlowCalculator.addNewFood(); // 料理1
+      userFlowCalculator.addNewFood(); // 料理2
+      
+      // 2. 料理1に重量を追加
+      userFlowCalculator.addWeight(userFlowCalculator.foods[0].id, '200');
+      
+      // 3. 料理2で料理1から計算
+      userFlowCalculator.updateCalculation(
+        userFlowCalculator.foods[1].id, 
+        userFlowCalculator.foods[0].id.toString(), 
+        '0.6'
+      );
+      
+      // 4. 履歴表示を確認
+      const historyHtml = userFlowCalculator.renderHistory(userFlowCalculator.foods[1]);
+      expect(historyHtml).toContain('=120g (料理1 × 0.6)');
+      expect(historyHtml).toContain('履歴');
+    });
   });
 
   describe('データ永続化', () => {

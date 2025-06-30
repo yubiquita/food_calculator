@@ -533,7 +533,7 @@ class FoodCalculator {
                     text = `-${Math.round(item.value)}g`;
                     break;
                 case 'calculation':
-                    text = `=${Math.round(item.value)}g (×${item.multiplier})`;
+                    text = `=${Math.round(item.value)}g (${item.sourceName} × ${item.multiplier})`;
                     break;
             }
             return `<div class="history-item">
