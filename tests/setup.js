@@ -158,25 +158,29 @@ htmlContent = htmlContent
 console.log('HTML content loaded:', htmlContent.length, 'characters');
 
 // Jest標準のjsdom環境にHTMLコンテンツを注入
-document.documentElement.innerHTML = htmlContent.match(/<html[^>]*>([\s\S]*)<\/html>/)[1];
+// HTML全体を正しく解析してbody部分を取得
+const parser = new DOMParser();
+const doc = parser.parseFromString(htmlContent, 'text/html');
+document.head.innerHTML = doc.head.innerHTML;
+document.body.innerHTML = doc.body.innerHTML;
 
 // DOM初期化完了の確認
 console.log('DOM initialized with', Array.from(document.querySelectorAll('[id]')).length, 'elements');
 
-// Mock document.getElementById for specific elements used in tests
-const originalGetElementById = document.getElementById;
-document.getElementById = jest.fn((id) => {
-  if (id === 'dish-list') {
-    // Return a mock object for 'dish-list' container
-    return {
-      innerHTML: '', // Mock innerHTML
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-    };
-  }
-  // Fallback to original for other elements
-  return originalGetElementById.call(document, id);
-});
+// toast-container要素の存在確認
+const toastContainer = document.getElementById('toast-container');
+console.log('toast-container found:', !!toastContainer);
+
+// Mock削除：実際のDOM要素を直接使用
+
+// DOM初期化関数をグローバルに公開
+global.initializeTestDOM = () => {
+  // HTML全体を正しく解析してbody部分を取得
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlContent, 'text/html');
+  document.head.innerHTML = doc.head.innerHTML;
+  document.body.innerHTML = doc.body.innerHTML;
+};
 
 // TouchEvent\u306e\u30e2\u30c3\u30af\u3092Jest\u74b0\u5883\u7528\u306b\u8a2d\u5b9a
 global.TouchEvent = global.TouchEvent || class TouchEvent extends Event {

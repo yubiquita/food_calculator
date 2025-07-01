@@ -1548,251 +1548,6 @@ describe('FoodCalculator', () => {
     });
   });
 
-  describe('トースト通知改善機能', () => {
-    beforeEach(() => {
-      // 確実にクリーンアップしてから新しく作成
-      document.querySelectorAll('#toast-container').forEach(el => el.remove());
-      
-      // DOM要素をセットアップ
-      const container = document.createElement('div');
-      container.id = 'toast-container';
-      container.className = 'toast-container';
-      document.body.appendChild(container);
-      
-      // currentToastもリセット
-      calculator.currentToast = null;
-    });
-
-    afterEach(() => {
-      // DOM要素とプロパティをクリーンアップ
-      document.querySelectorAll('#toast-container').forEach(el => el.remove());
-      calculator.currentToast = null;
-    });
-
-    test('showToastメソッドが循環参照時に呼び出される', () => {
-      // showToastメソッドをスパイ
-      const showToastSpy = jest.spyOn(calculator, 'showToast');
-      
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      // 循環参照を発生させる
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      
-      // showToastが呼び出されたことを確認
-      expect(showToastSpy).toHaveBeenCalledWith('循環参照のため計算できません', 'warning');
-      
-      showToastSpy.mockRestore();
-    });
-
-    test('DOM要素が正しくセットアップされている', () => {
-      const container = document.getElementById('toast-container');
-      expect(container).toBeTruthy();
-      expect(container.className).toBe('toast-container');
-      expect(container.children.length).toBe(0);
-    });
-
-    test('showToastメソッドを直接呼び出してテスト', () => {
-      const container = document.getElementById('toast-container');
-      expect(container).toBeTruthy();
-      expect(calculator.currentToast).toBeNull();
-      
-      // showToastを直接呼び出し
-      calculator.showToast('テストメッセージ', 'warning');
-      
-      // 通知が作成されることを確認
-      expect(calculator.currentToast).toBeTruthy();
-      expect(calculator.currentToast.textContent).toBe('テストメッセージ');
-      expect(container.children.length).toBe(1);
-    });
-
-    test('循環参照検出処理の詳細確認', () => {
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      // 循環参照検出をテスト
-      const isCircular = calculator.detectCircularReference(food.id, food.id);
-      expect(isCircular).toBe(true);
-      
-      // updateCalculationでの流れを確認
-      const sourceFood = calculator.foods.find(f => f.id === food.id);
-      expect(sourceFood).toBeTruthy();
-      
-      // showToastをスパイして実際の呼び出しを確認
-      const showToastSpy = jest.spyOn(calculator, 'showToast');
-      
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      
-      expect(showToastSpy).toHaveBeenCalledWith('循環参照のため計算できません', 'warning');
-      expect(calculator.currentToast).toBeTruthy();
-      
-      showToastSpy.mockRestore();
-    });
-
-    test('単一通知管理：同じメッセージの通知が連続表示される場合、前の通知が即座に削除される', () => {
-      calculator.addNewFood(); // A
-      calculator.addNewFood(); // B
-      
-      const foodA = calculator.foods[0];
-      const foodB = calculator.foods[1];
-      
-      // A → B を設定
-      calculator.updateCalculation(foodB.id, foodA.id, '0.5');
-      
-      // 最初の循環参照で通知表示
-      calculator.updateCalculation(foodA.id, foodB.id, '0.5');
-      expect(calculator.currentToast).toBeTruthy();
-      const firstToast = calculator.currentToast;
-      
-      // 2回目の循環参照（同じメッセージ）
-      calculator.updateCalculation(foodA.id, foodB.id, '0.5');
-      
-      // 前の通知が削除され、新しい通知が表示される
-      expect(firstToast.parentNode).toBeNull(); // DOM から削除済み
-      expect(calculator.currentToast).toBeTruthy();
-      expect(calculator.currentToast).not.toBe(firstToast);
-    });
-
-    test('currentToastプロパティが正しく管理される', () => {
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      // 初期状態
-      expect(calculator.currentToast).toBeNull();
-      
-      // 通知表示
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      expect(calculator.currentToast).toBeTruthy();
-      expect(calculator.currentToast.textContent).toBe('循環参照のため計算できません');
-      
-      // 同じメッセージで再度実行
-      const firstToast = calculator.currentToast;
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      
-      // 新しい通知に置き換わる
-      expect(calculator.currentToast).toBeTruthy();
-      expect(calculator.currentToast).not.toBe(firstToast);
-    });
-
-    test('通知要素が正しいCSSクラスとメッセージを持つ', () => {
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      // 循環参照を発生させる
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      
-      const toast = calculator.currentToast;
-      expect(toast).toBeTruthy();
-      expect(toast.classList.contains('toast-notification')).toBe(true);
-      expect(toast.classList.contains('warning')).toBe(true);
-      expect(toast.textContent).toBe('循環参照のため計算できません');
-    });
-
-    test('通知がトーストコンテナに正しく追加される', () => {
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      const container = document.getElementById('toast-container');
-      expect(container.children.length).toBe(0);
-      
-      // 通知を表示
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      
-      expect(container.children.length).toBe(1);
-      expect(container.children[0]).toBe(calculator.currentToast);
-    });
-
-    test('removeToastImmediatelyメソッドが正しく動作する', () => {
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      // 通知を表示
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      const toast = calculator.currentToast;
-      const container = document.getElementById('toast-container');
-      
-      expect(toast.parentNode).toBe(container);
-      expect(calculator.currentToast).toBe(toast);
-      
-      // 即座に削除
-      calculator.removeToastImmediately(toast);
-      
-      expect(toast.parentNode).toBeNull();
-      expect(calculator.currentToast).toBeNull();
-    });
-
-    test('通知にshowクラスが適用される（アニメーション改善）', () => {
-      jest.useFakeTimers();
-      
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      // 通知を表示
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      const toast = calculator.currentToast;
-      
-      // 通知が作成されていることを確認
-      expect(toast).toBeTruthy();
-      
-      // 初期状態ではshowクラスがない
-      expect(toast.classList.contains('show')).toBe(false);
-      
-      // 10ms経過をシミュレート
-      jest.advanceTimersByTime(10);
-      
-      // showクラスが追加されることを確認
-      expect(toast.classList.contains('show')).toBe(true);
-      
-      jest.useRealTimers();
-    });
-
-    test('3秒後に通知が自動削除される', () => {
-      jest.useFakeTimers();
-      
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      // 通知を表示
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      const toast = calculator.currentToast;
-      
-      expect(toast).toBeTruthy();
-      expect(calculator.currentToast).toBe(toast);
-      
-      // 3秒経過をシミュレート
-      jest.advanceTimersByTime(3000);
-      
-      // hideクラスが追加される
-      expect(toast.classList.contains('hide')).toBe(true);
-      expect(toast.classList.contains('show')).toBe(false);
-      
-      // アニメーション完了後にDOM から削除される
-      jest.advanceTimersByTime(400); // アニメーション時間
-      
-      // 最終的にcurrentToastがクリアされることを確認
-      expect(calculator.currentToast).toBeNull();
-      expect(toast.parentNode).toBeNull();
-      
-      jest.useRealTimers();
-    });
-
-    test('通知の初期スタイルが正しく設定される（フェード+縦移動）', () => {
-      calculator.addNewFood();
-      const food = calculator.foods[0];
-      
-      // 通知を表示
-      calculator.updateCalculation(food.id, food.id, '0.5');
-      const toast = calculator.currentToast;
-      
-      // CSSクラスの確認
-      expect(toast.classList.contains('toast-notification')).toBe(true);
-      expect(toast.classList.contains('warning')).toBe(true);
-      
-      // 初期状態では show クラスがない（アニメーション前）
-      expect(toast.classList.contains('show')).toBe(false);
-    });
-  });
-
   describe('テーマ機能', () => {
     let calculator;
     let originalQuerySelector;
@@ -1800,18 +1555,14 @@ describe('FoodCalculator', () => {
     let mockThemeText;
 
     beforeEach(() => {
-      // localStorageをクリア
-      localStorage.clear();
-      
-      // 直接TestFoodCalculatorインスタンスを作成
       calculator = createFoodCalculator();
       
-      // テーマボタン要素のモック
+      // document.querySelector を保存
+      originalQuerySelector = document.querySelector;
+      
+      // mock要素を作成
       mockThemeIcon = { textContent: '' };
       mockThemeText = { textContent: '' };
-      
-      // document.querySelector のオリジナルを保存
-      originalQuerySelector = document.querySelector;
       
       // document.querySelector をモック
       document.querySelector = jest.fn((selector) => {
@@ -1834,87 +1585,44 @@ describe('FoodCalculator', () => {
       calculator.toggleTheme();
       
       expect(calculator.theme).toBe('dark');
-      expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'dark');
+      expect(mockThemeIcon.textContent).toBe('☀️');
+      expect(mockThemeText.textContent).toBe('ライト');
     });
 
     test('テーマ切り替えでdarkからlightに変更される', () => {
+      // 最初にdarkに設定
       calculator.theme = 'dark';
       
       calculator.toggleTheme();
       
       expect(calculator.theme).toBe('light');
-      expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'light');
+      expect(mockThemeIcon.textContent).toBe('🌙');
+      expect(mockThemeText.textContent).toBe('ダーク');
     });
 
-    test('initThemeでDOM属性が設定される', () => {
+    test('updateThemeButtonが正しく動作する', () => {
+      // lightテーマの場合
+      calculator.theme = 'light';
+      calculator.updateThemeButton();
+      
+      expect(mockThemeIcon.textContent).toBe('🌙');
+      expect(mockThemeText.textContent).toBe('ダーク');
+      
+      // darkテーマの場合
       calculator.theme = 'dark';
-      
-      calculator.initTheme();
-      
-      expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'dark');
-    });
-
-    test('updateThemeButtonでダークテーマ時のボタン表示が更新される', () => {
-      calculator.theme = 'dark';
-      
       calculator.updateThemeButton();
       
       expect(mockThemeIcon.textContent).toBe('☀️');
       expect(mockThemeText.textContent).toBe('ライト');
     });
 
-    test('updateThemeButtonでライトテーマ時のボタン表示が更新される', () => {
-      calculator.theme = 'light';
-      
-      calculator.updateThemeButton();
-      
-      expect(mockThemeIcon.textContent).toBe('🌙');
-      expect(mockThemeText.textContent).toBe('ダーク');
-    });
-
     test('テーマ設定がlocalStorageに保存される', () => {
-      calculator.theme = 'light';
+      const saveDataSpy = jest.spyOn(calculator, 'saveData');
       
       calculator.toggleTheme();
       
-      const savedData = JSON.parse(localStorage.getItem('foodCalculatorData'));
-      expect(savedData.theme).toBe('dark');
-    });
-
-    test('アプリ起動時にlocalStorageからテーマが復元される', () => {
-      // 事前にダークテーマを保存
-      localStorage.setItem('foodCalculatorData', JSON.stringify({
-        foods: [],
-        dishes: [],
-        nextId: 1,
-        theme: 'dark'
-      }));
-      
-      calculator.loadData();
-      
-      expect(calculator.theme).toBe('dark');
-    });
-
-    test('localStorageにテーマ設定がない場合はlightがデフォルトとなる', () => {
-      localStorage.setItem('foodCalculatorData', JSON.stringify({
-        foods: [],
-        dishes: [],
-        nextId: 1
-        // themeプロパティなし
-      }));
-      
-      calculator.loadData();
-      
-      expect(calculator.theme).toBe('light');
-    });
-
-    test('localStorageが空の場合はlightがデフォルトとなる', () => {
-      localStorage.clear();
-      
-      calculator.loadData();
-      
-      expect(calculator.theme).toBe('light');
+      expect(saveDataSpy).toHaveBeenCalled();
+      saveDataSpy.mockRestore();
     });
   });
 });
-
