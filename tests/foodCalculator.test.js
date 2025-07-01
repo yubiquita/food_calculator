@@ -1184,6 +1184,65 @@ describe('FoodCalculator', () => {
       expect(calculator.foods[0].weight).toBe(500);
       expect(calculator.foods[0].history).toHaveLength(0);
     });
+
+    test('手動計算実行時は既存重量に加算される', () => {
+      // 食品を追加
+      calculator.addNewFood(); // 料理1 (参照元)
+      calculator.addNewFood(); // 料理2 (計算対象)
+      
+      const targetId = calculator.foods[1].id;
+      const sourceId = calculator.foods[0].id;
+      
+      // 参照元料理に重量を設定
+      calculator.foods[0].weight = 200;
+      
+      // ターゲット料理に初期重量を設定
+      calculator.foods[1].weight = 50;
+      
+      // 計算実行（200 * 0.6 = 120）
+      calculator.updateCalculation(targetId, sourceId.toString(), '0.6');
+      
+      // 既存重量(50) + 計算結果(120) = 170 になることを確認
+      expect(calculator.foods[1].weight).toBe(170);
+      expect(calculator.foods[1].calculation).toEqual({
+        sourceId: sourceId,
+        multiplier: 0.6
+      });
+      expect(calculator.foods[1].history).toHaveLength(1);
+      expect(calculator.foods[1].history[0]).toMatchObject({
+        type: 'calculation',
+        value: 120, // 計算結果の値
+        sourceName: '料理1',
+        multiplier: 0.6,
+        timestamp: '12:34'
+      });
+    });
+
+    test('手動計算を複数回実行すると重量が累積される', () => {
+      // 食品を追加
+      calculator.addNewFood(); // 料理1 (参照元)
+      calculator.addNewFood(); // 料理2 (計算対象)
+      
+      const targetId = calculator.foods[1].id;
+      const sourceId = calculator.foods[0].id;
+      
+      // 参照元料理に重量を設定
+      calculator.foods[0].weight = 200;
+      
+      // 初期重量設定
+      calculator.foods[1].weight = 30;
+      
+      // 1回目の計算（200 * 0.3 = 60）
+      calculator.updateCalculation(targetId, sourceId.toString(), '0.3');
+      expect(calculator.foods[1].weight).toBe(90); // 30 + 60
+      
+      // 2回目の計算（200 * 0.2 = 40）
+      calculator.updateCalculation(targetId, sourceId.toString(), '0.2');
+      expect(calculator.foods[1].weight).toBe(130); // 90 + 40
+      
+      // 履歴が2件記録されることを確認
+      expect(calculator.foods[1].history).toHaveLength(2);
+    });
   });
 
   describe('自動再計算機能', () => {
@@ -1428,6 +1487,35 @@ describe('FoodCalculator', () => {
       expect(foodB.weight).toBe(180); // 300 × 0.6
       expect(foodC.weight).toBe(120); // 300 × 0.4
       expect(foodD.weight).toBe(90);  // 180 × 0.5
+    });
+
+    test('自動再計算時は上書き・手動計算時は加算の動作違い', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算食品
+      
+      const sourceFood = calculator.foods[0];
+      const calcFood = calculator.foods[1];
+      
+      // 参照元食品に重量を設定
+      calculator.addWeight(sourceFood.id, '200');
+      
+      // 計算食品に初期重量を設定
+      calcFood.weight = 80;
+      
+      // 計算食品を設定（参照元 × 0.3 = 60）- 手動計算は加算
+      calculator.updateCalculation(calcFood.id, sourceFood.id, '0.3');
+      expect(calcFood.weight).toBe(140); // 80 + 60（手動計算は加算）
+      
+      // 参照元食品の重量を変更（200 → 300）
+      calculator.addWeight(sourceFood.id, '100');
+      
+      // 自動再計算では新しい計算結果で上書き
+      expect(calcFood.weight).toBe(90); // 300 × 0.3 = 90（上書き）
+      
+      // 履歴に自動再計算が記録されることを確認
+      expect(calcFood.history).toHaveLength(2);
+      expect(calcFood.history[1].type).toBe('auto_recalculation');
+      expect(calcFood.history[1].value).toBe(90);
     });
   });
 

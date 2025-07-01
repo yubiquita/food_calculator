@@ -214,7 +214,7 @@ class FoodCalculator {
                 sourceId: parseInt(sourceId),
                 multiplier: multiplierValue
             };
-            food.weight = calculatedWeight;
+            food.weight += calculatedWeight;
             
             this.addToHistory(food, this.createHistoryEntry('calculation', calculatedWeight, {
                 sourceName: sourceFood.name,

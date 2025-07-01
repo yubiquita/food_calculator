@@ -55,10 +55,15 @@ npm test -- --testNamePattern="自動再計算機能"
 npm test -- --testNamePattern="循環参照検出"
 npm test -- --testNamePattern="トースト通知改善機能"
 npm test -- --testNamePattern="テーマ機能"
+npm test -- --testNamePattern="Math.round\(\)統合機能"
+npm test -- --testNamePattern="計算結果統合機能"
+npm test -- --testNamePattern="手動計算"
+npm test -- --testNamePattern="動作違い"
 
 # 単一テストファイル実行
 npm test tests/foodCalculator.test.js
 npm test tests/utils.test.js
+npm test tests/toastNotification.test.js
 ```
 
 ## 主要データモデル
@@ -68,7 +73,7 @@ npm test tests/utils.test.js
 {
     id: number,           // 一意識別子
     name: string,         // ユーザー編集可能な食品名
-    weight: number,       // 現在の正味重量（グラム、整数で表示）
+    weight: number,       // 現在の正味重量（グラム、小数点で保存・整数で表示）
     calculation: {        // 他の食品からの計算（オプション）
         sourceId: number, // 他の食品IDへの参照
         multiplier: number // 乗算係数（例：60%の場合0.6）
@@ -105,14 +110,15 @@ npm test tests/utils.test.js
 - **加算**: 直接重量入力と現在の合計への加算
 - **減算**: 食器重量の減算（手動入力またはプリセット選択）
 - **食器プルダウン自動実行**: 食器選択時に即座に重量減算を実行（Issue #6実装）
-- **計算**: 他の食品からの乗算による重量導出（結果は`Math.round()`で整数化）
-- **自動再計算**: 参照元食品の重量変更時に依存する計算食品を自動更新（Issue #2実装）
+- **手動計算（加算方式）**: 他の食品からの乗算による重量導出、既存重量に計算結果を加算（Issue #8実装）
+- **自動再計算（上書き方式）**: 参照元食品の重量変更時に依存する計算食品を新しい計算結果で上書き更新
+- **計算結果統合**: 計算結果は通常の重量として統合、手動操作で計算関係自動クリア
 - **Gmail風スワイプUndo**: 左スワイプ（80px閾値）で最後の操作を取り消し（undo時も依存食品の自動再計算実行）
 - **クリップボードコピー**: 重量表示をタップして数値のみをコピー
 
 ### UI/UX機能
 - **料理名編集**: `onfocus="this.select()"`で全選択、Enterキーでフォーカス解除
-- **重量表示**: `Math.round()`で整数表示、クリック可能（`cursor: pointer`）
+- **重量表示**: `formatWeight()`メソッドで統一された整数表示、クリック可能（`cursor: pointer`）
 - **数値入力**: Enterキーで即座に実行、入力欄自動クリア
 - **操作履歴**: 全操作履歴をスクロール表示（60px固定高でoverflow-y: auto）
 - **テーマ切り替え**: ライト・ダークテーマの切り替え機能（localStorage永続化）
@@ -145,7 +151,9 @@ npm test tests/utils.test.js
 - **要素の縦整列**: 入力欄とボタンが各行で縦に揃うよう設計
 - **近接の原則**: 関連操作（重量・食器重量）を`gap: 5px`でグループ化
 
-### 自動再計算システム
+### 計算システム
+- **手動計算（加算）**: `updateCalculation`で`food.weight += calculatedWeight`により既存重量に加算
+- **自動再計算（上書き）**: `recalculateDependent`で`food.weight = newWeight`により新しい計算結果で上書き
 - **依存関係追跡**: `recalculateDependent(changedFoodId)`で変更された食品を参照している食品を検出
 - **再帰的更新**: 多階層の依存関係（A→B→C）も自動で連鎖更新
 - **循環参照検出**: `detectCircularReference(sourceId, targetId)`で深度優先探索による循環参照防止
@@ -166,8 +174,9 @@ npm test tests/utils.test.js
 
 ### テストファイル
 - **tests/setup.js**: Jestグローバル設定、DOM・localStorage・clipboard モック、script.jsからのFoodCalculator自動インポート
-- **tests/foodCalculator.test.js**: 基本機能、重量操作、データ永続化、UI機能、レンダリング仕様、テーマ機能テスト
+- **tests/foodCalculator.test.js**: 基本機能、重量操作、データ永続化、UI機能、Math.round()統合機能、計算結果統合機能テスト
 - **tests/utils.test.js**: ユーティリティ機能、エッジケース、レンダリングテスト
+- **tests/toastNotification.test.js**: トースト通知専用テスト（12テストケース）
 
 ### テスト実装時の注意点
 - **FoodCalculatorクラステスト**: `tests/setup.js`でscript.jsから自動インポートしたTestFoodCalculatorクラスを使用
@@ -181,7 +190,7 @@ npm test tests/utils.test.js
 ## 実装ガイドライン
 
 ### コア実装原則
-- **型安全性**: 重量は常に`Math.round()`で整数化、`parseFloat() || 0`でエラー回避
+- **型安全性**: データは小数点保持、表示は`formatWeight()`で統一整数化、`parseFloat() || 0`でエラー回避
 - **エラーハンドリング**: サイレントフェール設計（クリップボード、localStorage等）
 - **DOM安全性**: 要素存在確認後の操作、`getElementById`のnullチェック必須
 - **データ永続性**: 操作後の`saveData()`呼び出し、`render()`での画面同期
@@ -291,3 +300,19 @@ EOF
 ```
 
 **注意**: エラーメッセージが出てもIssueクローズ自体は成功している場合が多い。`gh issue view <number>`で状態確認を推奨。
+
+## 最新の実装状況
+
+### 完了済み機能
+- ✅ **Issue #2**: 自動再計算機能（`recalculateDependent()`、循環参照検出）
+- ✅ **Issue #3**: 計算結果を重量合計に統合（手動操作で計算関係クリア）
+- ✅ **Issue #4**: Math.round()統合（`formatWeight()`メソッド、小数点精度保持）
+- ✅ **Issue #8**: 手動計算加算方式（`food.weight += calculatedWeight`、自動再計算は上書き維持）
+
+### 計算機能の動作仕様
+- **手動計算**: `updateCalculation`メソッドで既存重量に計算結果を加算
+- **自動再計算**: `recalculateDependent`メソッドで新しい計算結果に上書き
+- **テストカバレッジ**: 手動計算加算、複数回累積、動作違い検証を含む145テスト全通過
+
+### TDD開発方針
+新機能実装時は必ずRED→GREEN→REFACTORサイクルを適用し、既存テストの継続通過を確認する。
