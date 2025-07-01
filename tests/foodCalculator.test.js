@@ -1674,4 +1674,138 @@ describe('FoodCalculator', () => {
       expect(calculator.formatWeight(999.999)).toBe('1000g');
     });
   });
+
+  describe('計算結果統合機能', () => {
+    test('計算結果が重量として正しく設定される', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算先
+      
+      const sourceId = calculator.foods[0].id;
+      const targetId = calculator.foods[1].id;
+      
+      calculator.foods[0].weight = 100;
+      calculator.updateCalculation(targetId, sourceId, 0.5);
+      
+      // 計算結果が重量として設定されることを確認
+      expect(calculator.foods[1].weight).toBe(50); // 100 * 0.5 = 50
+      
+      // 計算関係が設定されていることを確認
+      expect(calculator.foods[1].calculation).not.toBeNull();
+      expect(calculator.foods[1].calculation.sourceId).toBe(sourceId);
+      expect(calculator.foods[1].calculation.multiplier).toBe(0.5);
+    });
+
+    test('計算食品に対する加算操作が可能', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算先
+      
+      const sourceId = calculator.foods[0].id;
+      const targetId = calculator.foods[1].id;
+      
+      calculator.foods[0].weight = 100;
+      calculator.updateCalculation(targetId, sourceId, 0.5); // 50g
+      
+      // 計算食品に加算操作
+      calculator.addWeight(targetId, 20);
+      
+      // 重量が更新されることを確認
+      expect(calculator.foods[1].weight).toBe(70); // 50 + 20 = 70
+      
+      // 履歴に加算操作が記録されることを確認
+      const history = calculator.foods[1].history;
+      expect(history).toHaveLength(2); // calculation + add
+      expect(history[1].type).toBe('add');
+      expect(history[1].value).toBe(20);
+    });
+
+    test('計算食品に対する減算操作が可能', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算先
+      
+      const sourceId = calculator.foods[0].id;
+      const targetId = calculator.foods[1].id;
+      
+      calculator.foods[0].weight = 100;
+      calculator.updateCalculation(targetId, sourceId, 0.6); // 60g
+      
+      // 計算食品に減算操作
+      calculator.subtractWeight(targetId, 10);
+      
+      // 重量が更新されることを確認
+      expect(calculator.foods[1].weight).toBe(50); // 60 - 10 = 50
+      
+      // 履歴に減算操作が記録されることを確認
+      const history = calculator.foods[1].history;
+      expect(history).toHaveLength(2); // calculation + subtract
+      expect(history[1].type).toBe('subtract');
+      expect(history[1].value).toBe(10);
+    });
+
+    test('手動操作後に計算関係がクリアされる', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算先
+      
+      const sourceId = calculator.foods[0].id;
+      const targetId = calculator.foods[1].id;
+      
+      calculator.foods[0].weight = 100;
+      calculator.updateCalculation(targetId, sourceId, 0.5); // 50g
+      
+      // 計算関係が設定されていることを確認
+      expect(calculator.foods[1].calculation).not.toBeNull();
+      expect(calculator.foods[1].calculation.sourceId).toBe(sourceId);
+      
+      // 手動で加算操作
+      calculator.addWeight(targetId, 10);
+      
+      // 計算関係がクリアされることを確認
+      expect(calculator.foods[1].calculation).toBeNull();
+    });
+
+    test('手動操作後は自動再計算の対象外になる', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算先
+      
+      const sourceId = calculator.foods[0].id;
+      const targetId = calculator.foods[1].id;
+      
+      calculator.foods[0].weight = 100;
+      calculator.updateCalculation(targetId, sourceId, 0.5); // 50g
+      
+      // 手動で加算操作（計算関係をクリア）
+      calculator.addWeight(targetId, 10); // 60g
+      
+      // 参照元の重量を変更
+      calculator.addWeight(sourceId, 50); // 150g
+      
+      // 計算先の重量は変更されないことを確認（自動再計算されない）
+      expect(calculator.foods[1].weight).toBe(60); // 手動操作後の値を維持
+    });
+
+    test('計算結果の履歴が統合される', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算先
+      
+      const sourceId = calculator.foods[0].id;
+      const targetId = calculator.foods[1].id;
+      
+      calculator.foods[0].weight = 80;
+      calculator.updateCalculation(targetId, sourceId, 0.25); // 20g
+      
+      // 各種操作を実行
+      calculator.addWeight(targetId, 15);     // +15g = 35g
+      calculator.subtractWeight(targetId, 5); // -5g = 30g
+      
+      const history = calculator.foods[1].history;
+      expect(history).toHaveLength(3);
+      
+      // 履歴の順序確認
+      expect(history[0].type).toBe('calculation');
+      expect(history[0].value).toBe(20);
+      expect(history[1].type).toBe('add');
+      expect(history[1].value).toBe(15);
+      expect(history[2].type).toBe('subtract');
+      expect(history[2].value).toBe(5);
+    });
+  });
 });

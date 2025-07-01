@@ -156,6 +156,9 @@ class FoodCalculator {
                 food.weight += weightValue;
                 this.addToHistory(food, this.createHistoryEntry('add', weightValue));
                 
+                // 手動操作時は計算関係をクリア
+                food.calculation = null;
+                
                 // 依存食品の自動再計算
                 this.recalculateDependent(id);
                 
@@ -176,6 +179,9 @@ class FoodCalculator {
                 
                 food.weight -= weightValue;
                 this.addToHistory(food, this.createHistoryEntry('subtract', weightValue));
+                
+                // 手動操作時は計算関係をクリア
+                food.calculation = null;
                 
                 // 依存食品の自動再計算
                 this.recalculateDependent(id);
@@ -390,7 +396,7 @@ class FoodCalculator {
             const sourceSelect = document.getElementById(`calc-source-${foodId}`);
             const multiplierInput = document.getElementById(`calc-multiplier-${foodId}`);
             this.updateCalculation(foodId, sourceSelect.value, multiplierInput.value);
-        } else if (target.classList.contains('weight-display') || target.classList.contains('calculation-result')) {
+        } else if (target.classList.contains('weight-display')) {
             const value = target.dataset.copyValue;
             if (value) {
                 this.copyToClipboard(value);
@@ -598,7 +604,6 @@ class FoodCalculator {
                 <span>×</span>
                 <input type="number" class="calc-multiplier" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" data-food-id="${food.id}">
                 <button class="control-btn calculate-btn" data-food-id="${food.id}">計算</button>
-                ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${this.formatWeight(food.weight)}</span>` : ''}
             </div>
         `;
     }
