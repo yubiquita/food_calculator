@@ -127,14 +127,14 @@ describe('ユーティリティ機能とエッジケース', () => {
       expect(cardHtml).toContain('data-copy-value="123"');
     });
 
-    test('計算結果が正確に丸められる', () => {
+    test('計算結果が小数点で保存される', () => {
       calculator.addNewFood(); // ソース
       calculator.addNewFood(); // ターゲット
       calculator.foods[0].weight = 100.6;
       
       calculator.updateCalculation(2, '1', '0.333');
       
-      expect(calculator.foods[1].weight).toBe(33); // Math.round(100.6 * 0.333) = 33
+      expect(calculator.foods[1].weight).toBe(33.4998); // 100.6 * 0.333 = 33.4998 (小数点保持)
     });
 
     test('小数点以下の処理が正確', () => {

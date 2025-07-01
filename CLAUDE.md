@@ -278,12 +278,16 @@ AndroidでConsole確認が必要な場合、erudaを一時的に追加：
 gh issue close 6 --comment "**実装内容:**
 - 機能追加完了"
 
-# 推奨方法（HEREDOC使用）
-gh issue close 6 --comment "$(cat <<'EOF'
-実装内容: 機能追加完了
-詳細: プルダウン選択時に即座に重量減算を実行
+# 推奨方法（直接HEREDOC形式）
+gh issue close 2 --comment - <<EOF
+## 実装完了: 自動再計算機能
+
+### 実装内容
+- recalculateDependent() メソッド実装済み
+- 依存関係の自動更新機能
+
+機能は完全に実装され、テストも全て通過しています。
 EOF
-)"
 ```
 
 **注意**: エラーメッセージが出てもIssueクローズ自体は成功している場合が多い。`gh issue view <number>`で状態確認を推奨。

@@ -269,14 +269,14 @@ describe('FoodCalculator', () => {
       });
     });
 
-    test('計算結果は整数に丸められる', () => {
+    test('計算結果は小数点で保存される', () => {
       const targetId = calculator.foods[1].id;
       const sourceId = calculator.foods[0].id;
       calculator.foods[0].weight = 333;
       
       calculator.updateCalculation(targetId, sourceId.toString(), '0.5');
       
-      expect(calculator.foods[1].weight).toBe(167); // Math.round(333 * 0.5) = 167
+      expect(calculator.foods[1].weight).toBe(166.5); // 333 * 0.5 = 166.5 (小数点保持)
     });
 
     test('無効な乗数は1として扱われる', () => {
@@ -1623,6 +1623,55 @@ describe('FoodCalculator', () => {
       
       expect(saveDataSpy).toHaveBeenCalled();
       saveDataSpy.mockRestore();
+    });
+  });
+
+  describe('Math.round()統合機能', () => {
+    test('formatWeight()メソッドが存在し、小数点を整数に丸める', () => {
+      expect(typeof calculator.formatWeight).toBe('function');
+      
+      expect(calculator.formatWeight(123.456)).toBe('123g');
+      expect(calculator.formatWeight(0.7)).toBe('1g');
+      expect(calculator.formatWeight(0.4)).toBe('0g');
+      expect(calculator.formatWeight(0)).toBe('0g');
+    });
+
+    test('データ保存時はweightを小数点で保持する', () => {
+      calculator.addNewFood();
+      const foodId = calculator.foods[0].id;
+      
+      // 小数点を含む重量を設定
+      calculator.foods[0].weight = 123.456;
+      
+      // データが小数点で保存されることを確認
+      expect(calculator.foods[0].weight).toBe(123.456);
+    });
+
+    test('計算機能で小数点精度が保持される', () => {
+      calculator.addNewFood(); // 参照元
+      calculator.addNewFood(); // 計算先
+      
+      const sourceId = calculator.foods[0].id;
+      const targetId = calculator.foods[1].id;
+      
+      // 参照元に小数点を含む重量を設定
+      calculator.foods[0].weight = 100.567;
+      
+      // 計算設定（0.33倍）
+      calculator.updateCalculation(targetId, sourceId, 0.33);
+      
+      // 計算結果が小数点で保存されることを確認
+      const expectedWeight = 100.567 * 0.33; // 33.18711
+      expect(calculator.foods[1].weight).toBe(expectedWeight);
+    });
+
+    test('formatWeight()メソッドで表示の整数化が統一される', () => {
+      // formatWeight()メソッドで表示が統一されることを確認
+      expect(calculator.formatWeight(123.456)).toBe('123g');
+      expect(calculator.formatWeight(0.7)).toBe('1g');
+      expect(calculator.formatWeight(0.4)).toBe('0g');
+      expect(calculator.formatWeight(0)).toBe('0g');
+      expect(calculator.formatWeight(999.999)).toBe('1000g');
     });
   });
 });

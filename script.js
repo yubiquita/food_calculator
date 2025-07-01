@@ -59,6 +59,10 @@ class FoodCalculator {
         };
     }
 
+    formatWeight(weight) {
+        return `${Math.round(weight)}g`;
+    }
+
     restoreFromSnapshot(food, snapshot) {
         food.weight = snapshot.weight;
         food.calculation = snapshot.calculation ? { ...snapshot.calculation } : null;
@@ -198,7 +202,7 @@ class FoodCalculator {
             food.stateHistory.push(this.createStateSnapshot(food));
             
             const multiplierValue = parseFloat(multiplier) || 1;
-            const calculatedWeight = Math.round(sourceFood.weight * multiplierValue);
+            const calculatedWeight = sourceFood.weight * multiplierValue;
             
             food.calculation = {
                 sourceId: parseInt(sourceId),
@@ -259,7 +263,7 @@ class FoodCalculator {
         dependentFoods.forEach(food => {
             const sourceFood = this.foods.find(f => f.id === food.calculation.sourceId);
             if (sourceFood) {
-                const newWeight = Math.round(sourceFood.weight * food.calculation.multiplier);
+                const newWeight = sourceFood.weight * food.calculation.multiplier;
                 
                 // 重量が変わった場合のみ更新
                 if (food.weight !== newWeight) {
@@ -551,7 +555,7 @@ class FoodCalculator {
 
     renderWeightDisplay(food) {
         return `
-            <div class="weight-display" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;" title="タップでコピー">${Math.round(food.weight)}g</div>
+            <div class="weight-display" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;" title="タップでコピー">${this.formatWeight(food.weight)}</div>
         `;
     }
 
@@ -594,7 +598,7 @@ class FoodCalculator {
                 <span>×</span>
                 <input type="number" class="calc-multiplier" id="calc-multiplier-${food.id}" step="0.1" placeholder="1.0" data-food-id="${food.id}">
                 <button class="control-btn calculate-btn" data-food-id="${food.id}">計算</button>
-                ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${Math.round(food.weight)}g</span>` : ''}
+                ${food.calculation ? `<span class="calculation-result" data-copy-value="${Math.round(food.weight)}" style="cursor: pointer; user-select: none;">= ${this.formatWeight(food.weight)}</span>` : ''}
             </div>
         `;
     }
