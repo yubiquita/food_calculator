@@ -1,70 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>料理重量計算</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <button id="theme-toggle" class="theme-toggle">
-                <span class="theme-icon">🌙</span>
-                <span class="theme-text">ダーク</span>
-            </button>
-            <h1>料理重量計算</h1>
-            <div class="header-buttons">
-                <button id="add-food" class="btn-primary">+新規</button>
-                <button id="clear-all" class="btn-danger">全削除</button>
-                <button id="dish-settings" class="btn-secondary">食器設定</button>
-            </div>
-        </header>
-
-        <main class="main" id="food-cards">
-        </main>
-
-        <!-- 食器設定モーダル -->
-        <div id="dish-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>食器設定</h2>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form id="dish-form">
-                        <input type="text" id="dish-name" placeholder="食器の名前" required>
-                        <input type="number" id="dish-weight" placeholder="重量(g)" required>
-                        <button type="submit" class="btn-primary">追加</button>
-                    </form>
-                    <div id="dish-list"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 全削除確認モーダル -->
-        <div id="confirm-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>全削除の確認</h2>
-                </div>
-                <div class="modal-body">
-                    <p class="warning-message">
-                        すべての料理データを削除します。<br>
-                        この操作は取り消せません。
-                    </p>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button id="confirm-cancel" class="btn-secondary">キャンセル</button>
-                        <button id="confirm-delete" class="btn-danger">削除</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- トースト通知コンテナ -->
-        <div id="toast-container" class="toast-container"></div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
+    <script>
+      // GitHub Pages SPA リダイレクト処理
+      (function() {
+        const redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>

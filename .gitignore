@@ -20,5 +20,5 @@ Thumbs.db
 
 # Node.js dependencies and build artifacts
 node_modules/
-package-lock.json
 coverage/
+dist/

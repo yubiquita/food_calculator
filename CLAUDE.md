@@ -8,33 +8,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## アーキテクチャ
 
-シンプルなクライアントサイドアーキテクチャを採用：
+モダンなVue 3 + TypeScriptアーキテクチャを採用：
 
-- **シングルページアプリケーション**: ビルドプロセス不要の純粋なHTML/CSS/JavaScript
-- **クラスベースアーキテクチャ**: メインの`FoodCalculator`クラスがすべてのアプリケーション状態を管理
-- **データ永続化**: クライアントサイドデータストレージにlocalStorageを使用
-- **カードベースUI**: 各食品アイテムは個別のカードコンポーネントとしてレンダリング
-- **動的イベントバインディング**: `render()`実行時にDOMイベントリスナーを再設定
+- **シングルページアプリケーション**: Vue 3 + TypeScript + Vite による型安全なSPA
+- **コンポーネントベースアーキテクチャ**: 単一責任の原則に基づいたVueコンポーネント分割
+- **リアクティブ状態管理**: Piniaによる型安全なストア管理
+- **データ永続化**: localStorageによるクライアントサイドデータストレージ
+- **カードベースUI**: 各食品アイテムは`FoodCard.vue`コンポーネントとして実装
+- **Composables**: 再利用可能なロジック（`useSwipe`、`useClipboard`）をComposablesで提供
 
 ## 開発コマンド
 
 ### アプリケーション実行
 ```bash
-# ローカル開発サーバー（推奨）
-npx http-server -p 8080
-# ブラウザで http://127.0.0.1:8080 にアクセス
-# CSS/JavaScriptの読み込み問題を回避
+# 依存関係のインストール
+npm install
 
-# キャッシュ無効でローカルサーバー起動
-npx http-server -p 8080 -c-1
-# Cache-Control: no-store でブラウザキャッシュを無効化
+# 開発サーバー起動（HMR対応）
+npm run dev
+# ブラウザで http://localhost:5173 にアクセス
 
-# 直接ファイル開く（非推奨）
-# index.htmlを直接ブラウザで開く
-# Content URI経由では相対パスリソースが読み込めない
+# 本番ビルド
+npm run build
+
+# ビルド結果のプレビュー
+npm run preview
 
 # GitHub Pages デプロイ
-# git push で自動デプロイ（通常40秒程度で反映）
+npm run deploy
+# または GitHub Actions による自動デプロイ（mainブランチプッシュ時）
 ```
 
 ### テスト実行
@@ -49,21 +51,16 @@ npm run test:watch
 npm run test:coverage
 
 # 特定のテストグループ実行
-npm test -- --testNamePattern="Gmail風スワイプUndo機能"
-npm test -- --testNamePattern="基本機能"
-npm test -- --testNamePattern="自動再計算機能"
-npm test -- --testNamePattern="循環参照検出"
-npm test -- --testNamePattern="トースト通知改善機能"
-npm test -- --testNamePattern="テーマ機能"
-npm test -- --testNamePattern="Math.round\(\)統合機能"
-npm test -- --testNamePattern="計算結果統合機能"
-npm test -- --testNamePattern="手動計算"
-npm test -- --testNamePattern="動作違い"
+npm test -- --testNamePattern="食品ストア"
+npm test -- --testNamePattern="食器ストア"
+npm test -- --testNamePattern="テーマストア"
+npm test -- --testNamePattern="トーストストア"
 
 # 単一テストファイル実行
-npm test tests/foodCalculator.test.js
-npm test tests/utils.test.js
-npm test tests/toastNotification.test.js
+npm test src/stores/__tests__/food.test.ts
+npm test src/stores/__tests__/dish.test.ts
+npm test src/stores/__tests__/theme.test.ts
+npm test src/stores/__tests__/toast.test.ts
 ```
 
 ## 主要データモデル
@@ -125,17 +122,18 @@ npm test tests/toastNotification.test.js
 - **トースト通知**: 循環参照検出時の控えめな警告表示（フェード+縦移動アニメーション）
 
 ### データフロー
-1. すべてのユーザーアクションがデータモデルを即座に更新
-2. `saveData()`が各変更後にlocalStorageに永続化
-3. `render()`がカードインターフェース全体を再構築
-4. 動的イベントリスナーが`querySelectorAll()`で要素にバインド
+1. ユーザーアクションがPiniaストアのアクションを呼び出し
+2. ストアが状態を更新し、リアクティブにUIが更新
+3. `useAppStore.saveData()`が各変更後にlocalStorageに永続化
+4. Vueのリアクティブシステムがコンポーネントの再レンダリングを自動管理
 
 ## 重要な実装パターン
 
-### UI状態管理
-- `render()`メソッドで全UI状態を再構築（複雑な差分更新より保守性を優先）
-- 全削除ボタンは料理0件時に`disabled`状態で透明化（`opacity: 0.5`）
-- 動的イベントバインディングによりメモリリーク防止
+### Vue状態管理
+- Piniaストアによるリアクティブな状態管理
+- 各コンポーネントが必要なストアのみを参照し、変更を自動追跡
+- ComputedプロパティとWatcherによる効率的な再計算
+- 全削除ボタンは`foodCount`が0時に`disabled`状態
 
 ### Gmail風スワイプUndo機能
 - **カード構造**: `.card-container`が`.undo-background`と`.food-card`を包含
@@ -173,19 +171,20 @@ npm test tests/toastNotification.test.js
 ## テスト構造
 
 ### テストファイル
-- **tests/setup.js**: Jestグローバル設定、DOM・localStorage・clipboard モック、script.jsからのFoodCalculator自動インポート
-- **tests/foodCalculator.test.js**: 基本機能、重量操作、データ永続化、UI機能、Math.round()統合機能、計算結果統合機能テスト
-- **tests/utils.test.js**: ユーティリティ機能、エッジケース、レンダリングテスト
-- **tests/toastNotification.test.js**: トースト通知専用テスト（12テストケース）
+- **src/test-utils/setup.ts**: Vitestグローバル設定、DOM・localStorage・clipboard モック
+- **src/stores/__tests__/food.test.ts**: 食品ストア（28テスト）- CRUD、重量操作、計算、Undo機能
+- **src/stores/__tests__/dish.test.ts**: 食器ストア（24テスト）- 管理、検索、ソート、バリデーション
+- **src/stores/__tests__/theme.test.ts**: テーマストア（20テスト）- 切り替え、システム連携、永続化
+- **src/stores/__tests__/toast.test.ts**: トーストストア（27テスト）- 通知、タイマー、重複制御
 
 ### テスト実装時の注意点
-- **FoodCalculatorクラステスト**: `tests/setup.js`でscript.jsから自動インポートしたTestFoodCalculatorクラスを使用
+- **Piniaストアテスト**: `src/test-utils/helpers.ts`でストア作成ヘルパー関数を提供
 - **モック管理**: localStorage・navigator.clipboardは個別テストでモック作成
-- **データ分離**: テスト間でのデータ汚染を防ぐため、各テストで`localStorage.clear()`と`createFoodCalculator()`を実行
-- **DOM環境**: jest-environment-jsdomでブラウザ環境をシミュレート
-- **トースト通知テスト**: `beforeEach`で`toast-container`DOM要素の確実なセットアップが必要
-- **非同期テスト**: `jest.useFakeTimers()`でタイマー処理をモック、`jest.advanceTimersByTime()`で時間経過をシミュレート
-- **テーマ機能テスト**: `document.querySelector`のモックが必要、`document.documentElement.setAttribute`の呼び出し確認でテーマ変更を検証
+- **データ分離**: テスト間でのデータ汚染を防ぐため、各テストで`createPinia()`と`setActivePinia()`を実行
+- **DOM環境**: happy-domでブラウザ環境をシミュレート
+- **TypeScript対応**: 全テストファイルがTypeScriptで型安全に実装
+- **非同期テスト**: `vi.useFakeTimers()`でタイマー処理をモック、`vi.advanceTimersByTime()`で時間経過をシミュレート
+- **Vue Test Utils**: コンポーネントテストで`@vue/test-utils`を使用可能
 
 ## 実装ガイドライン
 
@@ -221,15 +220,15 @@ npm test tests/toastNotification.test.js
 
 ## パフォーマンス最適化
 
-### 現在の最適化手法
-- **DOM操作の最小化**: `render()`メソッドによる一括再描画
-- **イベントデリゲーション**: 動的要素に対する効率的なイベント処理
-- **メモリリーク防止**: イベントリスナーの適切なクリーンアップ
-- **レンダリング戦略**: 差分更新より保守性を優先した全体再構築
+### Vue最適化手法
+- **リアクティブシステム**: Vueの効率的な差分更新によるDOM操作最小化
+- **コンポーネント分割**: 単一責任の原則によるレンダリング範囲の限定
+- **Computed活用**: 重い計算結果のキャッシュ化
+- **メモリリーク防止**: Vueのライフサイクルによる自動クリーンアップ
 
 ### 最適化指針
-- 大量データ（100+食品）での性能確認が必要
-- スワイプ処理の最適化（タッチイベント処理）
+- 大量データ（100+食品）でのリスト仮想化検討
+- Composablesの適切な利用によるロジック再利用
 - localStorage操作の効率化
 
 ## エラーハンドリング
@@ -256,15 +255,57 @@ npm test tests/toastNotification.test.js
 - **タッチ操作**: スワイプUndo機能
 - **表示最適化**: モバイル専用レイアウト調整
 
+## デプロイメント
+
+### GitHub Pages設定
+- **ソース設定**: リポジトリ設定でSourceを「GitHub Actions」に設定（legacyモード禁止）
+- **自動デプロイ**: mainブランチプッシュ時にGitHub Actionsが自動実行
+- **手動デプロイ**: `npm run deploy`で即座にデプロイ可能
+
+### GitHub Actions運用
+```bash
+# Actions実行状況確認
+gh run list --limit 5
+
+# 失敗時のログ確認
+gh run view <RUN_ID> --log-failed
+
+# GitHub Pages設定確認・変更
+gh api repos/<user>/<repo>/pages
+gh api --method PUT repos/<user>/<repo>/pages -f build_type=workflow
+```
+
+### 重要な設定ファイル
+- **vite.config.ts**: `base: '/food_calculator/'`でGitHub Pages対応
+- **package-lock.json**: 必ずGitにコミット（GitHub Actionsキャッシュに必要）
+- **.gitignore**: `dist/`は除外、`package-lock.json`は含める
+
 ## 開発時の重要な注意事項
 
-- **自動同期**: `tests/setup.js`は`require('../script.js')`でFoodCalculatorクラスを自動インポート（手動同期不要）
-- **CommonJS対応**: `script.js`は条件付きで`module.exports`を提供、ブラウザ環境では通常通り動作
-- **Jest依存関係**: 開発時は`npm install`でJest環境をセットアップ
 - **TDD開発**: 新機能実装時はRED→GREEN→REFACTORサイクルを厳守
-- **統合テスト**: 単体テストに加えて実際のユーザーフロー（登録→操作→表示）をテストして環境差異を検出
+- **型安全性**: 全てのPiniaストアとVueコンポーネントでTypeScript型定義を厳密に管理
+- **テスト分離**: 各テストで`createPinia()`と`setActivePinia()`によるデータ分離必須
+- **モック管理**: localStorage・clipboardは個別テストで適切にモック
 
 ## トラブルシューティング
+
+### GitHub Pages関連
+**症状**: ページが真っ白で表示されない
+- **原因**: GitHub Pagesが「legacy」モードで動作
+- **解決**: `gh api --method PUT repos/<user>/<repo>/pages -f build_type=workflow`
+
+**症状**: `Dependencies lock file is not found`エラー
+- **原因**: package-lock.jsonがGitにコミットされていない
+- **解決**: `.gitignore`からpackage-lock.jsonを削除してコミット
+
+### GitHub Actions関連
+**症状**: `crypto.hash is not a function`エラー
+- **原因**: Node.js 18とVue/Viteの互換性問題
+- **解決**: GitHub ActionsでNode.js v20を使用
+
+**症状**: `Missing environment`エラー
+- **原因**: GitHub Pagesデプロイに必要なenvironment設定不足
+- **解決**: ワークフローにenvironment設定を追加
 
 ### ブラウザキャッシュ問題
 JavaScriptの変更が反映されない場合、ブラウザのキャッシュが原因の可能性。開発時は強制再読み込み（Ctrl+F5）またはキャッシュクリアを実行。
@@ -312,7 +353,25 @@ EOF
 ### 計算機能の動作仕様
 - **手動計算**: `updateCalculation`メソッドで既存重量に計算結果を加算
 - **自動再計算**: `recalculateDependent`メソッドで新しい計算結果に上書き
-- **テストカバレッジ**: 手動計算加算、複数回累積、動作違い検証を含む145テスト全通過
+- **テストカバレッジ**: 99テスト全通過（食品28、食器24、テーマ20、トースト27）
+
+## アーキテクチャの主要構成
+
+### Piniaストア構成
+- **useFoodStore**: 食品データ管理、CRUD操作、計算ロジック
+- **useDishStore**: 食器プリセット管理、検索・ソート機能
+- **useThemeStore**: テーマ切り替え、システム設定連携
+- **useToastStore**: 通知管理、自動削除タイマー
+- **useAppStore**: アプリケーション全体の状態、データ永続化
+
+### Composables
+- **useSwipe**: タッチイベント処理、スワイプUndo機能
+- **useClipboard**: クリップボード操作、フォールバック処理
+
+### Utilities
+- **calculation.ts**: 依存関係計算、循環参照検出
+- **storage.ts**: localStorage操作の抽象化
+- **clipboard.ts**: クリップボードAPI操作
 
 ### TDD開発方針
 新機能実装時は必ずRED→GREEN→REFACTORサイクルを適用し、既存テストの継続通過を確認する。
