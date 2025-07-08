@@ -1,6 +1,7 @@
 // スワイプ操作のComposable
 
-import { ref, readonly, type Ref } from 'vue'
+import { ref, readonly, type Ref, watchEffect } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import type { SwipeState } from '../types'
 
 export interface UseSwipeOptions {
@@ -117,28 +118,18 @@ export function useSwipe(
     }
   }
 
-  // イベントリスナーを登録
-  const attachListeners = () => {
-    if (!element.value) return
-
-    element.value.addEventListener('touchstart', handleTouchStart, { passive: true })
-    element.value.addEventListener('touchmove', handleTouchMove, { passive: true })
-    element.value.addEventListener('touchend', handleTouchEnd, { passive: true })
-  }
-
-  // イベントリスナーを削除
-  const detachListeners = () => {
-    if (!element.value) return
-
-    element.value.removeEventListener('touchstart', handleTouchStart)
-    element.value.removeEventListener('touchmove', handleTouchMove)
-    element.value.removeEventListener('touchend', handleTouchEnd)
-  }
+  // VueUseのuseEventListenerでイベントリスナーを自動管理
+  watchEffect(() => {
+    if (element.value) {
+      // 自動クリーンアップ付きイベントリスナー
+      useEventListener(element.value, 'touchstart', handleTouchStart, { passive: true })
+      useEventListener(element.value, 'touchmove', handleTouchMove, { passive: true })
+      useEventListener(element.value, 'touchend', handleTouchEnd, { passive: true })
+    }
+  })
 
   return {
     swipeState: readonly(swipeState),
-    attachListeners,
-    detachListeners,
     resetPosition
   }
 }

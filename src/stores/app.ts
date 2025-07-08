@@ -1,18 +1,25 @@
 // アプリケーション全体の状態管理
 
 import { defineStore } from 'pinia'
+import { useLocalStorage } from '@vueuse/core'
 import { useFoodStore } from './food'
 import { useDishStore } from './dish'
 import { useThemeStore } from './theme'
 import { useToastStore } from './toast'
-import { saveData, loadData } from '../utils/storage'
 import type { SavedData } from '../types'
 
 export const useAppStore = defineStore('app', {
   state: () => ({
     isInitialized: false,
     isLoading: false,
-    version: '2.0.0' // Vue版のバージョン
+    version: '2.0.0', // Vue版のバージョン
+    // リアクティブなlocalStorageデータ
+    savedData: useLocalStorage('foodCalculatorData', {
+      foods: [],
+      dishes: [],
+      nextId: 1,
+      theme: 'light'
+    } as SavedData)
   }),
 
   getters: {
@@ -64,14 +71,14 @@ export const useAppStore = defineStore('app', {
         const dishStore = useDishStore()
         const themeStore = useThemeStore()
 
-        const data: SavedData = {
+        // リアクティブなlocalStorageに直接保存
+        this.savedData = {
           foods: foodStore.foods,
           dishes: dishStore.dishes,
           nextId: foodStore.nextId,
           theme: themeStore.theme
         }
-
-        saveData(data)
+        
         // VueUse の useDark が自動的にlocalStorageを管理するため、
         // 明示的なテーマ保存は不要
       } catch (error) {
@@ -85,7 +92,7 @@ export const useAppStore = defineStore('app', {
     // アプリケーションデータを読み込み
     async loadAppData(): Promise<void> {
       try {
-        const data = loadData()
+        const data = this.savedData
         if (!data) return
 
         const foodStore = useFoodStore()
@@ -153,16 +160,7 @@ export const useAppStore = defineStore('app', {
 
     // データエクスポート用の情報を取得
     getExportData(): SavedData {
-      const foodStore = useFoodStore()
-      const dishStore = useDishStore()
-      const themeStore = useThemeStore()
-
-      return {
-        foods: foodStore.foods,
-        dishes: dishStore.dishes,
-        nextId: foodStore.nextId,
-        theme: themeStore.theme
-      }
+      return this.savedData
     },
 
     // データをインポート
@@ -189,8 +187,8 @@ export const useAppStore = defineStore('app', {
         foodStore.nextId = data.nextId
         themeStore.setTheme(data.theme)
 
-        // 保存
-        this.saveAppData()
+        // リアクティブなlocalStorageに直接保存
+        this.savedData = data
 
         const toastStore = useToastStore()
         toastStore.showSuccess('データのインポートが完了しました')

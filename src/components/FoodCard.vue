@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { Food } from '../types'
 import { useFoodStore, useDishStore } from '../stores'
@@ -52,25 +52,14 @@ const hasHistory = computed(() =>
   props.food.history && props.food.history.length > 0
 )
 
-// スワイプ機能の設定
-const { attachListeners, detachListeners } = useSwipe(cardElement, {
+// スワイプ機能の設定（自動イベントリスナー管理）
+useSwipe(cardElement, {
   threshold: 80,
   onSwipeLeft: () => {
     if (hasHistory.value) {
       handleUndo()
     }
   }
-})
-
-// ライフサイクル
-onMounted(() => {
-  if (hasHistory.value) {
-    attachListeners()
-  }
-})
-
-onUnmounted(() => {
-  detachListeners()
 })
 
 // イベントハンドラー

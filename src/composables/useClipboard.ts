@@ -1,18 +1,17 @@
 // クリップボード操作のComposable
 
-import { ref, readonly } from 'vue'
-import { copyToClipboard, isClipboardSupported } from '../utils/clipboard'
+import { useClipboard as useVueUseClipboard } from '@vueuse/core'
 import { useToastStore } from '../stores'
 
 export function useClipboard() {
-  const isSupported = ref(isClipboardSupported())
+  const { copy: vueCopy, copied, isSupported } = useVueUseClipboard()
   const toastStore = useToastStore()
 
   const copy = async (value: string | number): Promise<boolean> => {
     try {
-      const success = await copyToClipboard(value)
+      await vueCopy(value.toString())
       
-      if (success) {
+      if (copied.value) {
         // 成功時のフィードバック（Androidの場合は自動的に通知が表示される）
         return true
       } else {
@@ -32,7 +31,7 @@ export function useClipboard() {
   }
 
   return {
-    isSupported: readonly(isSupported),
+    isSupported,
     copy,
     copyWeight
   }

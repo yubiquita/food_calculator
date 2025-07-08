@@ -29,5 +29,18 @@ export function safeParseFloat(value: string | number): number {
  * 一意のIDを生成
  */
 export function generateUniqueId(): string {
+  // 最新のブラウザではcrypto.randomUUID()を使用
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  
+  // フォールバック実装（より強力なランダム性）
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(16)
+    crypto.getRandomValues(array)
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+  }
+  
+  // 最後のフォールバック
   return Date.now().toString(36) + Math.random().toString(36).substr(2)
 }

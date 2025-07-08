@@ -133,7 +133,7 @@ npm test src/stores/__tests__/toast.test.ts
 ### データフロー
 1. ユーザーアクションがPiniaストアのアクションを呼び出し
 2. ストアが状態を更新し、リアクティブにUIが更新
-3. `useAppStore.saveData()`が各変更後にlocalStorageに永続化
+3. VueUse `useLocalStorage()`が状態変更を自動でlocalStorageに永続化
 4. Vueのリアクティブシステムがコンポーネントの再レンダリングを自動管理
 
 ## 重要な実装パターン
@@ -144,14 +144,15 @@ npm test src/stores/__tests__/toast.test.ts
 - ComputedプロパティとWatcherによる効率的な再計算
 - 全削除ボタンは`foodCount`が0時に`disabled`状態
 
-### Gmail風スワイプUndo機能
+### Gmail風スワイプUndo機能（VueUse useEventListener統合）
 - **カード構造**: `.card-container`が`.undo-background`と`.food-card`を包含
-- **スワイプ検出**: タッチイベント（`touchstart`, `touchmove`, `touchend`）で左スワイプを検出
+- **スワイプ検出**: VueUse `useEventListener`による自動クリーンアップ付きタッチイベント管理
 - **閾値判定**: 80px以上の左スワイプ＋500ms以内の操作でundo実行
 - **方向制限**: `deltaX <= -threshold`で左スワイプのみに制限（右スワイプではundo動作しない）
 - **タップ誤動作防止**: `hasMoved`フラグで実際のスワイプとタップを区別
 - **状態管理**: 操作前の状態を`stateHistory`に保存し、undo時に復元
 - **自動再計算連携**: undo実行時に`recalculateDependent(id)`を呼び出し、依存する計算食品も自動更新
+- **メモリリーク防止**: コンポーネントアンマウント時の自動イベントリスナークリーンアップ
 
 ### レイアウトシステム
 - **CSS Grid**: コントロール要素の配置に3列等分割グリッド（`1fr 1fr 1fr`）を使用
@@ -174,11 +175,12 @@ npm test src/stores/__tests__/toast.test.ts
 - `data-theme`属性でライト/ダーク状態を管理
 - アプリ固有のUI（テーマボタンのアイコン/テキスト）は独自実装で保持
 
-### トースト通知システム
+### トースト通知システム（VueUse useTimeoutFn統合）
 - **単一通知管理**: `currentToast`プロパティで同時表示を1個に制限
 - **控えめなアニメーション**: フェードイン + 軽微な縦移動（-10px → 0px）
-- **自動削除**: 3秒後にフェードアウトして自動削除
+- **自動削除**: VueUse `useTimeoutFn()`による自動クリーンアップ付きタイマー管理
 - **テーマ対応**: ライト・ダークテーマで適切な色彩変更
+- **メモリリーク防止**: タイマーの自動停止とMapベース管理
 
 ## テスト構造
 
@@ -204,12 +206,13 @@ npm test src/stores/__tests__/toast.test.ts
 - **型安全性**: データは小数点保持、表示は`formatWeight()`で統一整数化、`parseFloat() || 0`でエラー回避
 - **エラーハンドリング**: サイレントフェール設計（クリップボード、localStorage等）
 - **DOM安全性**: 要素存在確認後の操作、`getElementById`のnullチェック必須
-- **データ永続性**: 操作後の`saveData()`呼び出し、`render()`での画面同期
+- **データ永続性**: VueUse `useLocalStorage()`による自動リアクティブ同期
 - **循環参照防止**: 計算設定前に`detectCircularReference()`による検証必須
 - **通知表示**: エラー時は`showToast()`による控えめな警告表示を採用
+- **メモリリーク防止**: VueUse Composablesによる自動リソース管理
 
 ### UI/UX実装規則
-- 新機能追加時は`render()`内でイベントリスナーを忘れずに設定
+- VueUse Composablesによる自動イベントリスナー管理を優先
 - モバイル対応を前提とした実装（タップイベント、クリップボード等）
 - モーダル追加時は既存のCSSクラス（`.modal`, `.btn-*`）を再利用
 - 数値入力にはEnterキー対応を必須実装
@@ -359,17 +362,20 @@ EOF
 - ✅ **Issue #3**: 計算結果を重量合計に統合（手動操作で計算関係クリア）
 - ✅ **Issue #4**: Math.round()統合（`formatWeight()`メソッド、小数点精度保持）
 - ✅ **Issue #8**: 手動計算加算方式（`food.weight += calculatedWeight`、自動再計算は上書き維持）
+- ✅ **VueUse統合**: タイマー、クリップボード、ストレージ、イベントリスナーの簡素化
 
 ### 計算機能の動作仕様
 - **手動計算**: `updateCalculation`メソッドで既存重量に計算結果を加算
 - **自動再計算**: `recalculateDependent`メソッドで新しい計算結果に上書き
 - **テストカバレッジ**: 89テスト全通過（食品28、食器24、テーマ10、トースト27）
 
-### テーマ管理の最新実装
-- **VueUse統合**: `@vueuse/core`の`useDark()`で139行→68行（51%削減）
-- **自動機能**: localStorage管理、システムテーマ検出、DOM操作、MediaQuery監視すべて自動化
-- **互換性保持**: 既存API（`setTheme`, `toggleTheme`, `initializeTheme`）は維持
-- **UI要素保持**: 日本語テーマボタンのアイコン/テキスト表示は独自実装として保持
+### VueUse統合による簡素化実装
+- **タイマー管理**: `useTimeoutFn()`による自動クリーンアップ付きタイマー
+- **クリップボード**: `useClipboard()`による統合API（66行→31行削減）
+- **ストレージ**: `useLocalStorage()`による自動リアクティブ同期（142行削除）
+- **イベントリスナー**: `useEventListener()`による自動クリーンアップ
+- **ID生成**: `crypto.randomUUID()`による堅牢な実装
+- **テーマ管理**: `useDark()`で139行→68行（51%削減）
 
 ## アーキテクチャの主要構成
 
@@ -381,13 +387,12 @@ EOF
 - **useAppStore**: アプリケーション全体の状態、データ永続化
 
 ### Composables
-- **useSwipe**: タッチイベント処理、スワイプUndo機能
-- **useClipboard**: クリップボード操作、フォールバック処理
+- **useSwipe**: タッチイベント処理、スワイプUndo機能（VueUse `useEventListener`統合）
+- **useClipboard**: クリップボード操作（VueUse `useClipboard`統合）
 
 ### Utilities
 - **calculation.ts**: 依存関係計算、循環参照検出
-- **storage.ts**: localStorage操作の抽象化
-- **clipboard.ts**: クリップボードAPI操作
+- **index.ts**: 重量フォーマット、時刻取得、数値変換、ID生成（crypto.randomUUID対応）
 
 ### TDD開発方針
 新機能実装時は必ずRED→GREEN→REFACTORサイクルを適用し、既存テストの継続通過を確認する。
