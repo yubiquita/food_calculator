@@ -276,7 +276,7 @@ gh api --method PUT repos/<user>/<repo>/pages -f build_type=workflow
 ```
 
 ### 重要な設定ファイル
-- **vite.config.ts**: `base: '/food_calculator/'`でGitHub Pages対応
+- **vite.config.ts**: `base: '/food_calculator/'`でGitHub Pages対応、`dev-eruda`プラグインで開発環境専用erudaを自動注入
 - **package-lock.json**: 必ずGitにコミット（GitHub Actionsキャッシュに必要）
 - **.gitignore**: `dist/`は除外、`package-lock.json`は含める
 
@@ -311,12 +311,10 @@ gh api --method PUT repos/<user>/<repo>/pages -f build_type=workflow
 JavaScriptの変更が反映されない場合、ブラウザのキャッシュが原因の可能性。開発時は強制再読み込み（Ctrl+F5）またはキャッシュクリアを実行。
 
 ### モバイルデバッグ
-AndroidでConsole確認が必要な場合、erudaを一時的に追加：
-```html
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
-```
-問題解決後は必ず削除すること。
+**開発環境でのeruda**: `npm run dev`実行時にerudaコンソールが自動で利用可能
+- vite.config.tsの`dev-eruda`プラグインにより開発環境でのみ自動注入
+- 本番ビルド（`npm run build`）には含まれない
+- 開発時にモバイルデバッグコンソールとして利用可能
 
 ## GitHub CLI使用時の注意事項
 
