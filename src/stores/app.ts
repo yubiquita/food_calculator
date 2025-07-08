@@ -43,10 +43,8 @@ export const useAppStore = defineStore('app', {
         // テーマを初期化
         themeStore.initializeTheme()
         
-        // テーマ変更時の自動保存を設定
-        themeStore.onThemeChange(() => {
-          this.saveAppData()
-        })
+        // VueUse の useDark が自動的にlocalStorageを管理するため、
+        // 明示的なテーマ変更監視は不要
 
         this.isInitialized = true
       } catch (error) {
@@ -70,11 +68,12 @@ export const useAppStore = defineStore('app', {
           foods: foodStore.foods,
           dishes: dishStore.dishes,
           nextId: foodStore.nextId,
-          theme: themeStore.currentTheme
+          theme: themeStore.theme
         }
 
         saveData(data)
-        themeStore.saveThemeToStorage()
+        // VueUse の useDark が自動的にlocalStorageを管理するため、
+        // 明示的なテーマ保存は不要
       } catch (error) {
         console.error('Failed to save app data:', error)
         
@@ -126,7 +125,6 @@ export const useAppStore = defineStore('app', {
     resetToDefault(): void {
       const foodStore = useFoodStore()
       const dishStore = useDishStore()
-      const themeStore = useThemeStore()
       const toastStore = useToastStore()
 
       // 各ストアをリセット
@@ -134,8 +132,8 @@ export const useAppStore = defineStore('app', {
       dishStore.$reset()
       toastStore.clearAllToasts()
       
-      // テーマをシステム設定に合わせる
-      themeStore.setSystemTheme()
+      // VueUse の useDark が自動的にシステム設定を検出するため、
+      // 明示的なシステムテーマ設定は不要
 
       this.isInitialized = true
     },
@@ -163,7 +161,7 @@ export const useAppStore = defineStore('app', {
         foods: foodStore.foods,
         dishes: dishStore.dishes,
         nextId: foodStore.nextId,
-        theme: themeStore.currentTheme
+        theme: themeStore.theme
       }
     },
 

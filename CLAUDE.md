@@ -16,6 +16,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **データ永続化**: localStorageによるクライアントサイドデータストレージ
 - **カードベースUI**: 各食品アイテムは`FoodCard.vue`コンポーネントとして実装
 - **Composables**: 再利用可能なロジック（`useSwipe`、`useClipboard`）をComposablesで提供
+- **VueUse統合**: `@vueuse/core`によるテーマ管理（`useDark`）でlocalStorage・システムテーマ検出を自動化
+
+### 主要依存関係
+- **Vue 3.5.17**: プログレッシブJavaScriptフレームワーク
+- **Pinia 3.0.3**: Vue 3専用の軽量状態管理ライブラリ
+- **@vueuse/core 13.5.0**: Vue Composition APIユーティリティコレクション（テーマ管理で使用）
+- **TypeScript**: 型安全性とIDE支援による開発効率向上
+- **Vite**: 高速な開発サーバーとビルドツール
+- **Vitest**: Vite環境でのユニットテストフレームワーク
 
 ## 開発コマンド
 
@@ -158,10 +167,12 @@ npm test src/stores/__tests__/toast.test.ts
 - **循環参照検出**: `detectCircularReference(sourceId, targetId)`で深度優先探索による循環参照防止
 - **履歴管理**: 自動再計算は`auto_recalculation`タイプとして履歴に記録（🔄アイコンで表示）
 
-### テーマシステム
+### テーマシステム（VueUse useDark()ベース）
+- `@vueuse/core`の`useDark()`による自動テーマ管理
+- localStorage自動永続化、システムテーマ自動検出、DOM自動操作
 - CSS変数（カスタムプロパティ）を使用したテーマ切り替え
 - `data-theme`属性でライト/ダーク状態を管理
-- localStorageで設定永続化、アプリ起動時に自動復元
+- アプリ固有のUI（テーマボタンのアイコン/テキスト）は独自実装で保持
 
 ### トースト通知システム
 - **単一通知管理**: `currentToast`プロパティで同時表示を1個に制限
@@ -175,7 +186,7 @@ npm test src/stores/__tests__/toast.test.ts
 - **src/test-utils/setup.ts**: Vitestグローバル設定、DOM・localStorage・clipboard モック
 - **src/stores/__tests__/food.test.ts**: 食品ストア（28テスト）- CRUD、重量操作、計算、Undo機能
 - **src/stores/__tests__/dish.test.ts**: 食器ストア（24テスト）- 管理、検索、ソート、バリデーション
-- **src/stores/__tests__/theme.test.ts**: テーマストア（20テスト）- 切り替え、システム連携、永続化
+- **src/stores/__tests__/theme.test.ts**: テーマストア（10テスト）- VueUse useDark()ベースの簡素化実装テスト
 - **src/stores/__tests__/toast.test.ts**: トーストストア（27テスト）- 通知、タイマー、重複制御
 
 ### テスト実装時の注意点
@@ -352,14 +363,20 @@ EOF
 ### 計算機能の動作仕様
 - **手動計算**: `updateCalculation`メソッドで既存重量に計算結果を加算
 - **自動再計算**: `recalculateDependent`メソッドで新しい計算結果に上書き
-- **テストカバレッジ**: 99テスト全通過（食品28、食器24、テーマ20、トースト27）
+- **テストカバレッジ**: 89テスト全通過（食品28、食器24、テーマ10、トースト27）
+
+### テーマ管理の最新実装
+- **VueUse統合**: `@vueuse/core`の`useDark()`で139行→68行（51%削減）
+- **自動機能**: localStorage管理、システムテーマ検出、DOM操作、MediaQuery監視すべて自動化
+- **互換性保持**: 既存API（`setTheme`, `toggleTheme`, `initializeTheme`）は維持
+- **UI要素保持**: 日本語テーマボタンのアイコン/テキスト表示は独自実装として保持
 
 ## アーキテクチャの主要構成
 
 ### Piniaストア構成
 - **useFoodStore**: 食品データ管理、CRUD操作、計算ロジック
 - **useDishStore**: 食器プリセット管理、検索・ソート機能
-- **useThemeStore**: テーマ切り替え、システム設定連携
+- **useThemeStore**: VueUse useDark()ベースのテーマ管理、日本語UI要素
 - **useToastStore**: 通知管理、自動削除タイマー
 - **useAppStore**: アプリケーション全体の状態、データ永続化
 

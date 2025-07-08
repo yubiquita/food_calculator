@@ -67,22 +67,6 @@ export interface ToastNotification {
   duration?: number
 }
 
-// イベントハンドラーの型定義
-export interface FoodEventHandlers {
-  onUpdateName: (id: number, name: string) => void
-  onAddWeight: (id: number, weight: number) => void
-  onSubtractWeight: (id: number, weight: number) => void
-  onUpdateCalculation: (id: number, sourceId: number, multiplier: number) => void
-  onDeleteFood: (id: number) => void
-  onUndoLastOperation: (id: number) => void
-  onCopyWeight: (value: number) => void
-}
-
-// 食器設定のイベントハンドラー
-export interface DishEventHandlers {
-  onAddDish: (dish: Omit<Dish, 'id'>) => void
-  onDeleteDish: (index: number) => void
-}
 
 // スワイプイベントの状態
 export interface SwipeState {
@@ -94,12 +78,6 @@ export interface SwipeState {
   threshold: number
 }
 
-// 計算結果の型
-export interface CalculationResult {
-  value: number
-  isValid: boolean
-  error?: string
-}
 
 // 循環参照検出の結果
 export interface CircularReferenceResult {
