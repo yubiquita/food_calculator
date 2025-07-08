@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="plateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#45a049;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="scaleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 重量計の台形本体（下が広い安定した形状） -->
+  <path d="M 8 16 L 24 16 L 26 28 L 6 28 Z" fill="url(#scaleGradient)" stroke="#1565C0" stroke-width="0.8"/>
+  
+  <!-- 重量計の上面（皿を置く台） -->
+  <ellipse cx="16" cy="16" rx="8" ry="2" fill="#42A5F5" stroke="#1976D2" stroke-width="0.5"/>
+  
+  <!-- 皿（重量計の上に乗っている）1枚のみ -->
+  <ellipse cx="16" cy="14" rx="10" ry="2.5" fill="url(#plateGradient)" stroke="#388E3C" stroke-width="0.8"/>
+</svg>
