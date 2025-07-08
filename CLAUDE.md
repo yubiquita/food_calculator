@@ -145,9 +145,10 @@ npm test src/stores/__tests__/toast.test.ts
 - **自動再計算連携**: undo実行時に`recalculateDependent(id)`を呼び出し、依存する計算食品も自動更新
 
 ### レイアウトシステム
-- **CSS Grid**: コントロール要素の配置に4列グリッド（`80px 100px 100px 60px`）を使用
+- **CSS Grid**: コントロール要素の配置に3列等分割グリッド（`1fr 1fr 1fr`）を使用
 - **要素の縦整列**: 入力欄とボタンが各行で縦に揃うよう設計
-- **近接の原則**: 関連操作（重量・食器重量）を`gap: 5px`でグループ化
+- **統一されたレイアウト**: 重量行・食器行・計算行すべてが同じ3列構造
+- **モバイル最適化**: 3等分割により横はみ出しを防止し、確実なコンテナ内収容を実現
 
 ### 計算システム
 - **手動計算（加算）**: `updateCalculation`で`food.weight += calculatedWeight`により既存重量に加算
@@ -216,7 +217,7 @@ npm test src/stores/__tests__/toast.test.ts
   - 成功・履歴色: `--success-color`, `--history-header-color`, `--history-text-color`
   - 補助色: `--secondary-text-color`, `--close-hover-color`
 - **新UI要素**: テーマ対応の`var(--変数名)`と`transition: color 0.3s ease`を必須設定
-- **レイアウト維持**: CSS Gridの4列構造（`80px 100px 100px 60px`）を変更時も維持
+- **レイアウト維持**: CSS Gridの3列等分割構造（`1fr 1fr 1fr`）を変更時も維持
 
 ## パフォーマンス最適化
 
@@ -373,3 +374,41 @@ EOF
 
 ### TDD開発方針
 新機能実装時は必ずRED→GREEN→REFACTORサイクルを適用し、既存テストの継続通過を確認する。
+
+## FoodCardコンポーネントの最新レイアウト仕様
+
+### 統一された3列レイアウト
+全コントロール行（重量・食器・計算）は以下の統一された3列等分割構造を採用：
+
+**重量行**: `[空白] [重量入力] [+ボタン]`
+**食器行**: `[食器選択] [食器重量入力] [-ボタン]`  
+**計算行**: `[食品選択] [× 1.0入力] [計算ボタン]`
+
+### CSS設定
+```css
+.control-row,
+.calculation-row {
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; /* デスクトップ */
+}
+
+@media (max-width: 480px) {
+  .control-row,
+  .calculation-row {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px; /* モバイル */
+  }
+}
+```
+
+### プレースホルダー活用
+- 重量入力: `placeholder="重量を入力"`
+- 食器重量入力: `placeholder="食器重量"`
+- 計算入力: `placeholder="× 1.0"`
+- 選択肢: デフォルトオプション（「食器選択」「食品選択」）
+
+### UI改善のポイント
+- ラベルレス設計によるスペース効率化
+- プレースホルダーによる直感的な操作案内
+- 全要素の`width: 100%`による列幅フル活用
+- モバイルでの横はみ出し完全防止

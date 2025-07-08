@@ -242,13 +242,12 @@ const handleWeightClick = () => {
       <div class="controls">
         <!-- 重量加算 -->
         <div class="control-row">
-          <label>重量:</label>
           <span></span>
           <input
             v-model="weightInput"
             type="number"
             class="weight-input"
-            placeholder="0"
+            placeholder="重量を入力"
             @keydown="handleWeightKeydown"
           />
           <button class="control-btn add-weight-btn" @click="handleAddWeight">
@@ -258,13 +257,12 @@ const handleWeightClick = () => {
 
         <!-- 食器重量減算 -->
         <div class="control-row">
-          <label>食器重量:</label>
           <select
             v-model="selectedDish"
             class="dish-select"
             @change="handleDishSelect"
           >
-            <option value="">選択</option>
+            <option value="">食器選択</option>
             <option
               v-for="dish in dishOptions"
               :key="dish.index"
@@ -277,7 +275,7 @@ const handleWeightClick = () => {
             v-model="dishWeightInput"
             type="number"
             class="dish-weight-input"
-            placeholder="0"
+            placeholder="食器重量"
             @keydown="handleDishWeightKeydown"
           />
           <button class="control-btn subtract-weight-btn" @click="handleSubtractWeight">
@@ -287,9 +285,8 @@ const handleWeightClick = () => {
 
         <!-- 計算 -->
         <div v-if="foodOptions.length > 0" class="calculation-row">
-          <label>計算:</label>
           <select v-model="calcSourceId" class="calc-source">
-            <option value="">選択</option>
+            <option value="">食品選択</option>
             <option
               v-for="option in foodOptions"
               :key="option.id"
@@ -298,13 +295,12 @@ const handleWeightClick = () => {
               {{ option.name }}
             </option>
           </select>
-          <span>×</span>
           <input
             v-model="calcMultiplier"
             type="number"
             class="calc-multiplier"
             step="0.1"
-            placeholder="1.0"
+            placeholder="× 1.0"
             @keydown="handleCalculationKeydown"
           />
           <button class="control-btn calculate-btn" @click="handleCalculation">
@@ -460,22 +456,24 @@ const handleWeightClick = () => {
 
 .controls {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
-.control-row,
-.calculation-row {
+.control-row {
   display: grid;
-  grid-template-columns: 80px 100px 100px 60px;
-  gap: 5px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
   align-items: center;
 }
 
-.control-row label,
-.calculation-row label {
-  font-size: 12px;
-  color: var(--secondary-text-color);
+.calculation-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: center;
 }
+
+
 
 .weight-input,
 .dish-weight-input,
@@ -544,26 +542,41 @@ const handleWeightClick = () => {
     padding: 15px;
   }
   
-  .control-row,
-  .calculation-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .controls {
+    gap: 12px;
   }
   
-  .control-row label,
-  .calculation-row label {
-    font-size: 14px;
-    margin-bottom: 4px;
+  .control-row {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px;
+  }
+  
+  .calculation-row {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px;
+  }
+  
+  .calc-source,
+  .calc-multiplier {
+    width: 100%;
   }
   
   .weight-input,
   .dish-weight-input,
   .calc-multiplier,
   .dish-select,
-  .calc-source,
+  .calc-source {
+    padding: 10px 8px;
+    font-size: 14px;
+    border-radius: 6px;
+    width: 100%;
+  }
+  
   .control-btn {
-    padding: 12px;
-    font-size: 16px;
+    width: 100%;
+    font-weight: 600;
+    padding: 10px 8px;
+    font-size: 14px;
   }
 }
 </style>
