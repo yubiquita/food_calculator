@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { Food } from '../types'
 import { useFoodStore, useDishStore } from '../stores'
@@ -53,11 +53,19 @@ const hasHistory = computed(() =>
 )
 
 // スワイプ機能の設定（自動イベントリスナー管理）
-useSwipe(cardElement, {
+const { setupEventListeners } = useSwipe(cardElement, {
   threshold: 80,
   onSwipeLeft: () => {
+    console.log('🔴 [FoodCard] スワイプ左コールバック実行', {
+      foodId: props.food.id,
+      foodName: props.food.name,
+      hasHistory: hasHistory.value
+    })
     if (hasHistory.value) {
+      console.log('🔴 [FoodCard] undo実行中...')
       handleUndo()
+    } else {
+      console.log('⚠️ [FoodCard] 履歴がないためundoをスキップ')
     }
   }
 })
@@ -153,14 +161,43 @@ const handleDelete = () => {
 }
 
 const handleUndo = () => {
+  console.log('🔄 [FoodCard] handleUndo実行', {
+    foodId: props.food.id,
+    foodName: props.food.name,
+    historyLength: props.food.history?.length || 0
+  })
   foodStore.undoLastOperation(props.food.id)
   emit('change')
+  console.log('🔄 [FoodCard] undo完了')
 }
 
 const handleWeightClick = () => {
   const roundedWeight = Math.round(props.food.weight)
   copyWeight(roundedWeight)
 }
+
+// コンポーネントマウント時のデバッグ
+onMounted(() => {
+  console.log('🟢 [FoodCard] コンポーネントマウント', {
+    foodId: props.food.id,
+    foodName: props.food.name,
+    cardElement: cardElement.value,
+    hasHistory: hasHistory.value
+  })
+  // スワイプ機能の初期化を明示的に実行
+  if (setupEventListeners) {
+    setupEventListeners()
+  }
+})
+
+// カード要素の状態を監視
+watchEffect(() => {
+  console.log('🟡 [FoodCard] カード要素の状態変化', {
+    foodId: props.food.id,
+    cardElement: cardElement.value,
+    hasHistory: hasHistory.value
+  })
+})
 </script>
 
 <template>
@@ -176,6 +213,9 @@ const handleWeightClick = () => {
       ref="cardElement"
       class="food-card"
       :class="{ swipeable: hasHistory }"
+      @touchstart="console.log('🔑 [FoodCard] DOM touchstartイベント', { foodId: food.id })"
+      @touchmove="console.log('🔑 [FoodCard] DOM touchmoveイベント', { foodId: food.id })"
+      @touchend="console.log('🔑 [FoodCard] DOM touchendイベント', { foodId: food.id })"
     >
       <!-- カードヘッダー -->
       <div class="food-card-header">
