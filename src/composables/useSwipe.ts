@@ -156,7 +156,9 @@ export function useSwipe(
       onSwipeLeft?.()
       // スワイプ成功後も必ず元の位置に戻す
       setTimeout(() => {
-        console.log('🔄 [useSwipe] スワイプ成功後のリセット')
+        if (import.meta.env.DEV) {
+          console.log('🔄 [useSwipe] スワイプ成功後のリセット')
+        }
         resetPosition()
       }, 100)
     } else if (isValidSwipe && deltaX >= threshold) {
@@ -165,7 +167,9 @@ export function useSwipe(
       onSwipeRight?.()
       // スワイプ成功後も必ず元の位置に戻す
       setTimeout(() => {
-        console.log('🔄 [useSwipe] スワイプ成功後のリセット')
+        if (import.meta.env.DEV) {
+          console.log('🔄 [useSwipe] スワイプ成功後のリセット')
+        }
         resetPosition()
       }, 100)
     } else {

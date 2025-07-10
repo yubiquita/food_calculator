@@ -57,12 +57,14 @@ const { setupEventListeners } = useSwipe(cardElement, {
   threshold: 80,
   enabled: () => hasHistory.value, // hasHistoryがtrueの時のみスワイプ有効
   onSwipeLeft: () => {
-    console.log('🔴 [FoodCard] スワイプ左コールバック実行', {
-      foodId: props.food.id,
-      foodName: props.food.name,
-      hasHistory: hasHistory.value
-    })
-    console.log('🔴 [FoodCard] undo実行中...')
+    if (import.meta.env.DEV) {
+      console.log('🔴 [FoodCard] スワイプ左コールバック実行', {
+        foodId: props.food.id,
+        foodName: props.food.name,
+        hasHistory: hasHistory.value
+      })
+      console.log('🔴 [FoodCard] undo実行中...')
+    }
     handleUndo()
   }
 })
@@ -158,14 +160,18 @@ const handleDelete = () => {
 }
 
 const handleUndo = () => {
-  console.log('🔄 [FoodCard] handleUndo実行', {
-    foodId: props.food.id,
-    foodName: props.food.name,
-    historyLength: props.food.history?.length || 0
-  })
+  if (import.meta.env.DEV) {
+    console.log('🔄 [FoodCard] handleUndo実行', {
+      foodId: props.food.id,
+      foodName: props.food.name,
+      historyLength: props.food.history?.length || 0
+    })
+  }
   foodStore.undoLastOperation(props.food.id)
   emit('change')
-  console.log('🔄 [FoodCard] undo完了')
+  if (import.meta.env.DEV) {
+    console.log('🔄 [FoodCard] undo完了')
+  }
 }
 
 const handleWeightClick = () => {
@@ -175,12 +181,14 @@ const handleWeightClick = () => {
 
 // コンポーネントマウント時のデバッグ
 onMounted(() => {
-  console.log('🟢 [FoodCard] コンポーネントマウント', {
-    foodId: props.food.id,
-    foodName: props.food.name,
-    cardElement: cardElement.value,
-    hasHistory: hasHistory.value
-  })
+  if (import.meta.env.DEV) {
+    console.log('🟢 [FoodCard] コンポーネントマウント', {
+      foodId: props.food.id,
+      foodName: props.food.name,
+      cardElement: cardElement.value,
+      hasHistory: hasHistory.value
+    })
+  }
   // スワイプ機能の初期化を明示的に実行
   if (setupEventListeners) {
     setupEventListeners()
@@ -189,11 +197,13 @@ onMounted(() => {
 
 // カード要素の状態を監視
 watchEffect(() => {
-  console.log('🟡 [FoodCard] カード要素の状態変化', {
-    foodId: props.food.id,
-    cardElement: cardElement.value,
-    hasHistory: hasHistory.value
-  })
+  if (import.meta.env.DEV) {
+    console.log('🟡 [FoodCard] カード要素の状態変化', {
+      foodId: props.food.id,
+      cardElement: cardElement.value,
+      hasHistory: hasHistory.value
+    })
+  }
 })
 </script>
 
@@ -210,9 +220,9 @@ watchEffect(() => {
       ref="cardElement"
       class="food-card"
       :class="{ swipeable: hasHistory }"
-      @touchstart="console.log('🔑 [FoodCard] DOM touchstartイベント', { foodId: food.id })"
-      @touchmove="console.log('🔑 [FoodCard] DOM touchmoveイベント', { foodId: food.id })"
-      @touchend="console.log('🔑 [FoodCard] DOM touchendイベント', { foodId: food.id })"
+      @touchstart="import.meta.env.DEV && console.log('🔑 [FoodCard] DOM touchstartイベント', { foodId: food.id })"
+      @touchmove="import.meta.env.DEV && console.log('🔑 [FoodCard] DOM touchmoveイベント', { foodId: food.id })"
+      @touchend="import.meta.env.DEV && console.log('🔑 [FoodCard] DOM touchendイベント', { foodId: food.id })"
     >
       <!-- カードヘッダー -->
       <div class="food-card-header">
