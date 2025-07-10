@@ -52,21 +52,18 @@ const hasHistory = computed(() =>
   props.food.history && props.food.history.length > 0
 )
 
-// スワイプ機能の設定（自動イベントリスナー管理）
+// スワイプ機能の設定（hasHistory連動）
 const { setupEventListeners } = useSwipe(cardElement, {
   threshold: 80,
+  enabled: () => hasHistory.value, // hasHistoryがtrueの時のみスワイプ有効
   onSwipeLeft: () => {
     console.log('🔴 [FoodCard] スワイプ左コールバック実行', {
       foodId: props.food.id,
       foodName: props.food.name,
       hasHistory: hasHistory.value
     })
-    if (hasHistory.value) {
-      console.log('🔴 [FoodCard] undo実行中...')
-      handleUndo()
-    } else {
-      console.log('⚠️ [FoodCard] 履歴がないためundoをスキップ')
-    }
+    console.log('🔴 [FoodCard] undo実行中...')
+    handleUndo()
   }
 })
 

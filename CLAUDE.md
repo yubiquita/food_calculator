@@ -147,6 +147,9 @@ npm test src/stores/__tests__/toast.test.ts
 ### Gmail風スワイプUndo機能（手動イベントリスナー管理）
 - **カード構造**: `.card-container`が`.undo-background`と`.food-card`を包含
 - **スワイプ検出**: 手動イベントリスナー管理による確実なタッチイベント処理
+- **条件付き有効化**: `enabled?: () => boolean`パラメータで動的な有効/無効制御
+- **hasHistory連動**: `enabled: () => hasHistory.value`により履歴がある場合のみスワイプ機能を有効化
+- **早期リターン**: 無効時は各タッチイベント（touchstart/touchmove/touchend）で即座に処理をスキップ
 - **閾値判定**: 80px以上の左スワイプ＋500ms以内の操作でundo実行
 - **方向制限**: `deltaX <= -threshold`で左スワイプのみに制限（右スワイプではundo動作しない）
 - **タップ誤動作防止**: `hasMoved`フラグで実際のスワイプとタップを区別
@@ -334,9 +337,11 @@ JavaScriptの変更が反映されない場合、ブラウザのキャッシュ�
 
 **スワイプ機能デバッグ**: 詳細なコンソールログを出力
 - `useSwipe.ts`で全タッチイベント（touchstart/touchmove/touchend）をログ出力
+- `enabled()`チェックによる条件付きスキップ動作をログで確認可能
 - `FoodCard.vue`でスワイプコールバック実行とundo処理をログ出力
 - スワイプ判定条件（deltaX、timeDelta、hasMoved）の詳細確認が可能
 - 要素の位置リセット処理（resetPosition）の実行状況を追跡
+- hasHistory=falseでのスワイプ無効化動作を完全に追跡可能
 
 ## GitHub CLI使用時の注意事項
 
@@ -394,7 +399,7 @@ EOF
 - **useAppStore**: アプリケーション全体の状態、データ永続化
 
 ### Composables
-- **useSwipe**: タッチイベント処理、スワイプUndo機能（手動イベントリスナー管理、デバッグログ付き）
+- **useSwipe**: タッチイベント処理、スワイプUndo機能（手動イベントリスナー管理、条件付き有効化、デバッグログ付き）
 - **useClipboard**: クリップボード操作（VueUse `useClipboard`統合）
 
 ### Utilities

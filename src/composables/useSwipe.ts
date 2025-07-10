@@ -6,6 +6,7 @@ import type { SwipeState } from '../types'
 export interface UseSwipeOptions {
   threshold?: number
   timeLimit?: number
+  enabled?: () => boolean
   onSwipeLeft?: () => void
   onSwipeRight?: () => void
 }
@@ -17,6 +18,7 @@ export function useSwipe(
   const {
     threshold = 80,
     timeLimit = 500,
+    enabled = () => true,
     onSwipeLeft,
     onSwipeRight
   } = options
@@ -32,6 +34,12 @@ export function useSwipe(
 
   // タッチ開始
   const handleTouchStart = (e: TouchEvent) => {
+    // enabled チェック
+    if (!enabled()) {
+      console.log('⚠️ [useSwipe] スワイプ機能が無効のためtouchstartをスキップ')
+      return
+    }
+    
     console.log('🟢 [useSwipe] touchstart イベント発生')
     const touch = e.touches[0]
     swipeState.value = {
@@ -53,6 +61,12 @@ export function useSwipe(
 
   // タッチ移動
   const handleTouchMove = (e: TouchEvent) => {
+    // enabled チェック
+    if (!enabled()) {
+      console.log('⚠️ [useSwipe] スワイプ機能が無効のためtouchmoveをスキップ')
+      return
+    }
+    
     if (!swipeState.value.isDragging) {
       console.log('⚠️ [useSwipe] touchmove: isDragging=false でリターン')
       return
@@ -96,6 +110,16 @@ export function useSwipe(
   // タッチ終了
   const handleTouchEnd = () => {
     console.log('🔴 [useSwipe] touchend イベント発生')
+    
+    // enabled チェック
+    if (!enabled()) {
+      console.log('⚠️ [useSwipe] スワイプ機能が無効のためtouchendをスキップ')
+      // 状態だけリセット
+      swipeState.value.isDragging = false
+      swipeState.value.hasMoved = false
+      return
+    }
+    
     if (!swipeState.value.isDragging) {
       console.log('⚠️ [useSwipe] touchend: isDragging=false でリターン')
       return
