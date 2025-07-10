@@ -222,6 +222,13 @@ npm test src/stores/__tests__/toast.test.ts
 - 数値入力にはEnterキー対応を必須実装
 - **食器プルダウン自動実行**: `_handleCardChange`でchangeイベント時の自動処理を実装
 
+### Vue環境変数とビルド最適化
+- **テンプレート内環境変数**: `import.meta.env.DEV`は直接使用不可、computed値経由で使用
+- **推奨パターン**: `const isDev = computed(() => import.meta.env.DEV)`でリアクティブフラグ作成
+- **デバッグログ**: 条件付きログは`if (import.meta.env.DEV) { console.log(...) }`パターンを使用
+- **ビルド最適化**: 本番ビルド時にfalsy条件のコードブロックが自動除去される
+- **パフォーマンス**: computed値によるテンプレート内条件分岐でゼロランタイムコスト実現
+
 ### 履歴とUndo機能
 - 履歴表示は全件保存・降順表示を採用（`.reverse()`使用、最新操作が上に表示）
 - スワイプundo機能では操作前の状態を`stateHistory`に保存し、undo時に`history`と`stateHistory`の両方から削除
@@ -328,6 +335,16 @@ gh api --method PUT repos/<user>/<repo>/pages -f build_type=workflow
 
 ### ブラウザキャッシュ問題
 JavaScriptの変更が反映されない場合、ブラウザのキャッシュが原因の可能性。開発時は強制再読み込み（Ctrl+F5）またはキャッシュクリアを実行。
+
+### ビルドエラーとトラブルシューティング
+**症状**: `import.meta may appear only with 'sourceType: "module"`エラー
+- **原因**: Vueテンプレート内で`import.meta.env.DEV`を直接使用
+- **解決**: computed値経由で使用 - `const isDev = computed(() => import.meta.env.DEV)`
+- **テンプレート**: `@event="isDev && console.log(...)"`パターンで条件付き実行
+
+**症状**: デバッグログが本番に含まれる
+- **原因**: 環境変数による条件分岐の不適切な実装
+- **解決**: `if (import.meta.env.DEV) { console.log(...) }`で囲むことで本番ビルド時に自動除去
 
 ### モバイルデバッグ
 **開発環境でのeruda**: `npm run dev`実行時にerudaコンソールが自動で利用可能

@@ -52,6 +52,9 @@ const hasHistory = computed(() =>
   props.food.history && props.food.history.length > 0
 )
 
+// 開発環境フラグ
+const isDev = computed(() => import.meta.env.DEV)
+
 // スワイプ機能の設定（hasHistory連動）
 const { setupEventListeners } = useSwipe(cardElement, {
   threshold: 80,
@@ -220,9 +223,9 @@ watchEffect(() => {
       ref="cardElement"
       class="food-card"
       :class="{ swipeable: hasHistory }"
-      @touchstart="import.meta.env.DEV && console.log('🔑 [FoodCard] DOM touchstartイベント', { foodId: food.id })"
-      @touchmove="import.meta.env.DEV && console.log('🔑 [FoodCard] DOM touchmoveイベント', { foodId: food.id })"
-      @touchend="import.meta.env.DEV && console.log('🔑 [FoodCard] DOM touchendイベント', { foodId: food.id })"
+      @touchstart="isDev && console.log('🔑 [FoodCard] DOM touchstartイベント', { foodId: food.id })"
+      @touchmove="isDev && console.log('🔑 [FoodCard] DOM touchmoveイベント', { foodId: food.id })"
+      @touchend="isDev && console.log('🔑 [FoodCard] DOM touchendイベント', { foodId: food.id })"
     >
       <!-- カードヘッダー -->
       <div class="food-card-header">
