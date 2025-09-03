@@ -66,7 +66,7 @@ const handleDataChange = () => {
       
       <div v-else class="food-cards">
         <FoodCard
-          v-for="food in foods"
+          v-for="food in foods.slice().reverse()"
           :key="food.id"
           :food="food"
           @change="handleDataChange"
