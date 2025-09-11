@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import FoodCard from './FoodCard.vue'
 import DishSettingsModal from './DishSettingsModal.vue'
@@ -19,10 +19,22 @@ const showConfirmModal = ref(false)
 // 食器設定モーダルの表示状態
 const showDishModal = ref(false)
 
+// FoodCardコンポーネントの参照を管理
+const foodCardRefs = ref<InstanceType<typeof FoodCard>[]>([])
+
 // 新しい食品を追加
-const handleAddFood = () => {
+const handleAddFood = async () => {
   foodStore.addNewFood()
   appStore.saveAppData()
+  
+  // DOM更新後に新しい食品の名前入力欄にフォーカス
+  await nextTick()
+  
+  // 新しい食品は配列の最後に追加されるが、表示は.reverse()で先頭になる
+  // そのためfoodCardRefs[0]が新しい食品のコンポーネント
+  if (foodCardRefs.value[0]) {
+    foodCardRefs.value[0].focusNameInput()
+  }
 }
 
 // 全削除確認モーダルを表示
@@ -69,6 +81,7 @@ const handleDataChange = () => {
           v-for="food in foods.slice().reverse()"
           :key="food.id"
           :food="food"
+          ref="foodCardRefs"
           @change="handleDataChange"
         />
         

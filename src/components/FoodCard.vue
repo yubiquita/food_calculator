@@ -28,6 +28,7 @@ const dishOptions = computed(() => getDishOptions.value)
 
 // 参照要素
 const cardElement = ref<HTMLElement | null>(null)
+const nameInputRef = ref<HTMLInputElement | null>(null)
 
 // 入力値の状態
 const weightInput = ref('')
@@ -208,6 +209,19 @@ watchEffect(() => {
     })
   }
 })
+
+// 食品名入力欄にフォーカス
+const focusNameInput = () => {
+  if (nameInputRef.value) {
+    nameInputRef.value.focus()
+    nameInputRef.value.select()
+  }
+}
+
+// 外部からアクセス可能にする
+defineExpose({
+  focusNameInput
+})
 </script>
 
 <template>
@@ -230,6 +244,7 @@ watchEffect(() => {
       <!-- カードヘッダー -->
       <div class="food-card-header">
         <input
+          ref="nameInputRef"
           type="text"
           class="food-name"
           :value="food.name"
