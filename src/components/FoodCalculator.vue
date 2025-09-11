@@ -24,16 +24,19 @@ const foodCardRefs = ref<InstanceType<typeof FoodCard>[]>([])
 
 // 新しい食品を追加
 const handleAddFood = async () => {
-  foodStore.addNewFood()
+  const newFoodId = foodStore.addNewFood()
   appStore.saveAppData()
   
   // DOM更新後に新しい食品の名前入力欄にフォーカス
   await nextTick()
   
-  // 新しい食品は配列の最後に追加されるが、表示は.reverse()で先頭になる
-  // そのためfoodCardRefs[0]が新しい食品のコンポーネント
-  if (foodCardRefs.value[0]) {
-    foodCardRefs.value[0].focusNameInput()
+  // IDベースで新しいカードを特定してフォーカス
+  const newCard = foodCardRefs.value.find(card => 
+    card.$props.food.id === newFoodId
+  )
+  
+  if (newCard) {
+    newCard.focusNameInput()
   }
 }
 

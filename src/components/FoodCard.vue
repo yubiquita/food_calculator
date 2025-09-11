@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watchEffect } from 'vue'
+import { ref, computed, onMounted, watchEffect, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { Food } from '../types'
 import { useFoodStore, useDishStore } from '../stores'
@@ -29,6 +29,7 @@ const dishOptions = computed(() => getDishOptions.value)
 // 参照要素
 const cardElement = ref<HTMLElement | null>(null)
 const nameInputRef = ref<HTMLInputElement | null>(null)
+const weightInputRef = ref<HTMLInputElement | null>(null)
 
 // 入力値の状態
 const weightInput = ref('')
@@ -85,10 +86,14 @@ const handleNameFocus = (event: Event) => {
   target.select()
 }
 
-const handleNameKeydown = (event: KeyboardEvent) => {
+const handleNameKeydown = async (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     const target = event.target as HTMLInputElement
     target.blur()
+    
+    // DOM更新後に重量入力欄にフォーカス
+    await nextTick()
+    focusWeightInput()
   }
 }
 
@@ -218,6 +223,13 @@ const focusNameInput = () => {
   }
 }
 
+// 重量入力欄にフォーカス
+const focusWeightInput = () => {
+  if (weightInputRef.value) {
+    weightInputRef.value.focus()
+  }
+}
+
 // 外部からアクセス可能にする
 defineExpose({
   focusNameInput
@@ -298,6 +310,7 @@ defineExpose({
         <div class="control-row">
           <span></span>
           <input
+            ref="weightInputRef"
             v-model="weightInput"
             type="number"
             class="weight-input"
