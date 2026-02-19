@@ -8,13 +8,15 @@ export function formatWeight(weight: number): string {
 }
 
 /**
- * 現在の時刻を日本語形式で取得
+ * 現在の時刻を日本語形式（月/日 時:分）で取得
  */
 export function getCurrentTimeString(): string {
-  return new Date().toLocaleTimeString('ja-JP', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  })
+  const now = new Date()
+  const month = now.getMonth() + 1
+  const date = now.getDate()
+  const hours = now.getHours().toString().padStart(2, '0')
+  const minutes = now.getMinutes().toString().padStart(2, '0')
+  return `${month}/${date} ${hours}:${minutes}`
 }
 
 /**

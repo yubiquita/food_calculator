@@ -519,6 +519,8 @@ defineExpose({
 .history-time {
   color: var(--history-time-color);
   font-size: 10px;
+  white-space: nowrap;
+  margin-left: 8px;
 }
 
 .controls {

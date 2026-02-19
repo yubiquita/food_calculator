@@ -1,6 +1,6 @@
-# CLAUDE.md
+# GEMINI.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Gemini CLI when working with code in this repository.
 
 ## アプリケーション概要
 
@@ -241,7 +241,7 @@ npm test src/stores/__tests__/toast.test.ts
   - 基本色: `--bg-color`, `--card-bg`, `--text-color`, `--header-text`
   - 成功・履歴色: `--success-color`, `--history-header-color`, `--history-text-color`
   - 補助色: `--secondary-text-color`, `--close-hover-color`
-- **新UI要素**: テーマ対応の`var(--変数名)`と`transition: color 0.3s ease`を必須設定
+- **新UI要素**: テーマ対応의 `var(--変数名)`と`transition: color 0.3s ease`を必須設定
 - **レイアウト維持**: CSS Gridの3列等分割構造（`1fr 1fr 1fr`）を変更時も維持
 
 ## パフォーマンス最適化
